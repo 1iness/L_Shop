@@ -21,9 +21,11 @@
   },
   "homepage": "https://github.com/1iness/L_Shop#readme",
   "dependencies": {
+    "cookie-parser": "^1.4.7",
     "express": "^5.2.1"
   },
   "devDependencies": {
+    "@types/cookie-parser": "^1.4.10",
     "@types/express": "^5.0.6",
     "@types/node": "^25.5.0",
     "eslint": "^10.1.0",
