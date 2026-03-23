@@ -5,9 +5,12 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon --exec \"node --loader ts-node/esm\" src/server.ts",
+    "dev": "npm run build:client && npm run server",
     "build": "tsc",
-    "start": "node dist/server.js"
+    "start": "node dist/server.js",
+    "build:client": "tsc -p client/tsconfig.json",
+    "build:client:watch": "tsc -p client/tsconfig.json --watch",
+    "server": "nodemon --exec \"node --loader ts-node/esm\" src/server.ts"
   },
   "repository": {
     "type": "git",

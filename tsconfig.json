@@ -42,5 +42,6 @@
     "skipLibCheck": true,
     "moduleResolution": "NodeNext",
     "esModuleInterop": true,
-  }
+  },
+  "exclude": ["node_modules", "client", "public"]
 }
