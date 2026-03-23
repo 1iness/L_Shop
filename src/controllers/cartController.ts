@@ -37,3 +37,17 @@ export const addToCart = async (req: Request, res: Response): Promise<void> => {
         res.status(500).json({ message: 'Ошибка корзины' });
     }
 };
+
+export const getCart = async (req: Request, res: Response): Promise<void> => {
+    try {
+        const username = req.cookies?.username || 'guest';
+        const carts = await readData<UserCart>('carts.json');
+        
+        const userCart = carts.find(c => c.username === username) || { username, items: [] };
+        
+        res.status(200).json(userCart);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Ошибка при получении корзины' });
+    }
+};

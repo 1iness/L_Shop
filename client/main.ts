@@ -9,11 +9,10 @@ interface Product {
 
 const appContainer = document.getElementById('app');
 
-// --- 1. Отрисовка главной страницы ---
+// Отрисовка главной страницы 
 const renderHome = async (): Promise<void> => {
     if (!appContainer) return;
     
-    // Базовая разметка с сеткой для карточек
     appContainer.innerHTML = `
         <h2>Наши банные принадлежности</h2>
         <div id="products-list" style="display: flex; gap: 20px; flex-wrap: wrap;"></div>
@@ -31,17 +30,14 @@ const renderHome = async (): Promise<void> => {
             return;
         }
 
-        // Рендерим карточки на основе данных
         products.forEach(product => {
             const card = document.createElement('div');
-            // Немного стилей для визуального порядка [cite: 76]
             card.style.border = '1px solid #ddd';
             card.style.padding = '15px';
             card.style.borderRadius = '8px';
             card.style.width = '250px';
             card.style.backgroundColor = '#f9f9f9';
 
-            // Строго соблюдаем ТЗ: вешаем data-title и data-price [cite: 86, 87]
             card.innerHTML = `
                 <h3 data-title>${product.title}</h3>
                 <p style="font-size: 0.9em; color: #555;">${product.description}</p>
@@ -65,11 +61,10 @@ const renderHome = async (): Promise<void> => {
     }
 };
 
-// --- 2. Отрисовка страницы регистрации ---
+//  Отрисовка страницы регистрации 
 const renderRegister = (): void => {
     if (!appContainer) return;
     
-    // Форма с атрибутом data-registration по требованиям ТЗ
     appContainer.innerHTML = `
         <h2>Регистрация</h2>
         <form id="register-form" data-registration="true">
@@ -94,20 +89,18 @@ const renderRegister = (): void => {
         <div id="form-message" style="margin-top: 15px; font-weight: bold;"></div>
     `;
 
-    // Подключаем обработчик отправки формы
     const form = document.getElementById('register-form') as HTMLFormElement;
     form.addEventListener('submit', handleRegister);
 };
 
-// --- 3. Логика отправки данных (Связь с API) ---
+//  Логика отправки данных 
 const handleRegister = async (event: Event): Promise<void> => {
-    event.preventDefault(); // Запрещаем стандартную перезагрузку страницы браузером
+    event.preventDefault(); 
     
 const form = event.target as HTMLFormElement;
     const messageBox = document.getElementById('form-message');
     if (!messageBox) return;
 
-    // Строгая типизация полей без использования any [cite: 67, 73]
     const usernameInput = form.elements.namedItem('username') as HTMLInputElement;
     const emailInput = form.elements.namedItem('email') as HTMLInputElement;
     const phoneInput = form.elements.namedItem('phone') as HTMLInputElement;
@@ -121,7 +114,6 @@ const form = event.target as HTMLFormElement;
     };
 
     try {
-        // Отправляем POST-запрос на наш бэкенд
         const response = await fetch('/api/users/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -133,9 +125,8 @@ const form = event.target as HTMLFormElement;
         if (response.ok) {
             messageBox.style.color = 'green';
             messageBox.textContent = 'Успешно: ' + result.message;
-            form.reset(); // Очищаем поля формы
-            
-            // Автоматический возврат на главную через 2 секунды
+            form.reset(); 
+    
             setTimeout(renderHome, 2000);
         } else {
             messageBox.style.color = 'red';
@@ -169,9 +160,125 @@ const addToCartHandler = async (productId: string): Promise<void> => {
         console.error('Ошибка при добавлении в корзину', error);
     }
 };
-// --- 4. Простейший Роутер (Навигация) ---
+
+const renderCart = async (): Promise<void> => {
+    if (!appContainer) return;
+
+    appContainer.innerHTML = '<h2>Ваша корзина</h2><div id="cart-content">Загрузка...</div>';
+    const cartContent = document.getElementById('cart-content');
+    if (!cartContent) return;
+
+    try {
+        const response = await fetch('/api/cart'); 
+        
+        if (response.status === 401) {
+            cartContent.innerHTML = '<p style="color: red;">Нужно авторизоваться, чтобы увидеть корзину.</p>';
+            return;
+        }
+
+        const data = await response.json();
+        const items = data.items || [];
+
+        if (items.length === 0) {
+            cartContent.innerHTML = '<p>В корзине пока пусто. Время купить веник!</p>';
+            return;
+        }
+
+        let cartHtml = '<table style="width: 100%; border-collapse: collapse;">';
+        cartHtml += '<tr style="background: #eee;"><th>Товар (ID)</th><th>Кол-во</th></tr>';
+        
+        items.forEach((item: { productId: string, quantity: number }) => {
+            cartHtml += `
+                <tr style="border-bottom: 1px solid #ddd;">
+                    <td style="padding: 10px;">Товар #${item.productId}</td>
+                    <td style="padding: 10px;">${item.quantity} шт.</td>
+                </tr>
+            `;
+        });
+        
+        cartHtml += '</table>';
+        cartHtml += `<br><button id="checkout-btn" style="padding: 10px 20px; background: green; color: white; border: none; cursor: pointer;">Оформить доставку</button>`;
+        
+        cartContent.innerHTML = cartHtml;
+        document.getElementById('checkout-btn')?.addEventListener('click', renderDelivery);
+
+    } catch (error) {
+        cartContent.innerHTML = '<p>Ошибка при загрузке корзины.</p>';
+    }
+};
+
+//Отрисовка страницы Доставки 
+const renderDelivery = (): void => {
+    if (!appContainer) return;
+
+    appContainer.innerHTML = `
+        <h2>Оформление доставки</h2>
+        <form id="delivery-form" data-delivery="true">
+            <div style="margin-bottom: 10px;">
+                <label for="address">Адрес доставки:</label><br>
+                <input type="text" id="address" name="address" required>
+            </div>
+            <div style="margin-bottom: 10px;">
+                <label for="delivery-phone">Контактный телефон:</label><br>
+                <input type="tel" id="delivery-phone" name="phone" required>
+            </div>
+            <div style="margin-bottom: 10px;">
+                <label for="delivery-email">Электронная почта:</label><br>
+                <input type="email" id="delivery-email" name="email" required>
+            </div>
+            <div style="margin-bottom: 10px;">
+                <label for="delivery-date">Дата доставки:</label><br>
+                <input type="date" id="delivery-date" name="date" required>
+            </div>
+            <button type="submit" style="padding: 10px 20px; background: blue; color: white; border: none; cursor: pointer;">
+                Подтвердить заказ
+            </button>
+        </form>
+        <div id="delivery-message" style="margin-top: 15px; font-weight: bold;"></div>
+    `;
+
+    const dateInput = document.getElementById('delivery-date') as HTMLInputElement;
+    dateInput.min = new Date().toISOString().split("T")[0];
+
+    document.getElementById('delivery-form')?.addEventListener('submit', handleDeliverySubmit);
+};
+
+// Обработка оформления заказа 
+const handleDeliverySubmit = async (event: Event): Promise<void> => {
+    event.preventDefault();
+    const form = event.target as HTMLFormElement;
+    const messageBox = document.getElementById('delivery-message');
+    if (!messageBox) return;
+
+    const address = (form.elements.namedItem('address') as HTMLInputElement).value;
+    const phone = (form.elements.namedItem('phone') as HTMLInputElement).value;
+    const email = (form.elements.namedItem('email') as HTMLInputElement).value;
+    const date = (form.elements.namedItem('date') as HTMLInputElement).value;
+
+    try {
+        const response = await fetch('/api/delivery/order', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ address, phone, email, date })
+        });
+
+        if (response.ok) {
+            messageBox.style.color = 'green';
+            messageBox.textContent = 'Заказ успешно оформлен! Корзина очищена.';
+            
+            setTimeout(renderHome, 3000);
+        } else {
+            const errData = await response.json();
+            messageBox.style.color = 'red';
+            messageBox.textContent = 'Ошибка: ' + errData.message;
+        }
+    } catch (error) {
+        messageBox.style.color = 'red';
+        messageBox.textContent = 'Ошибка связи с сервером.';
+    }
+};
+
 document.getElementById('nav-home')?.addEventListener('click', renderHome);
 document.getElementById('nav-register')?.addEventListener('click', renderRegister);
-
-// Инициализация приложения: при загрузке открываем главную
+document.getElementById('nav-cart')?.addEventListener('click', renderCart);
 window.addEventListener('DOMContentLoaded', renderHome);
