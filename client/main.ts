@@ -7,6 +7,11 @@ interface Product {
     isAvailable: boolean;
 }
 
+interface Window {
+    handleQuantityChange: (productId: string, action: 'increase' | 'decrease') => Promise<void>;
+    handleRemoveItem: (productId: string) => Promise<void>;
+}
+
 const appContainer = document.getElementById('app');
 
 // Отрисовка главной страницы 
@@ -233,7 +238,7 @@ const renderCart = async (): Promise<void> => {
 };
 
 // Обработчик изменения количества (+/-)
-(window as any).handleQuantityChange = async (productId: string, action: 'increase' | 'decrease'): Promise<void> => {
+window.handleQuantityChange = async (productId: string, action: 'increase' | 'decrease'): Promise<void> => {
     try {
         const endpoint = action === 'increase' ? '/api/cart/increase' : '/api/cart/decrease';
         const response = await fetch(endpoint, {
@@ -297,7 +302,7 @@ const renderCart = async (): Promise<void> => {
 };
 
 // Обработчик удаления товара
-(window as any).handleRemoveItem = async (productId: string): Promise<void> => {
+window.handleRemoveItem = async (productId: string): Promise<void> => {
     try {
         const response = await fetch('/api/cart/remove', {
             method: 'POST',
@@ -336,34 +341,64 @@ const renderCart = async (): Promise<void> => {
 const renderDelivery = (): void => {
     if (!appContainer) return;
 
+    const captchaNum1 = Math.floor(Math.random() * 10) + 1;
+    const captchaNum2 = Math.floor(Math.random() * 10) + 1;
+    const captchaAnswer = captchaNum1 + captchaNum2;
+    const captchaQuestion = `${captchaNum1} + ${captchaNum2}`;
+
     appContainer.innerHTML = `
         <h2>Оформление доставки</h2>
         <form id="delivery-form" data-delivery="true">
             <div style="margin-bottom: 10px;">
                 <label for="address">Адрес доставки:</label><br>
-                <input type="text" id="address" name="address" required>
+                <input type="text" id="address" name="address" required style="padding: 8px; width: 300px;">
             </div>
             <div style="margin-bottom: 10px;">
                 <label for="delivery-phone">Контактный телефон:</label><br>
-                <input type="tel" id="delivery-phone" name="phone" required>
+                <input type="tel" id="delivery-phone" name="phone" required style="padding: 8px; width: 300px;">
             </div>
             <div style="margin-bottom: 10px;">
                 <label for="delivery-email">Электронная почта:</label><br>
-                <input type="email" id="delivery-email" name="email" required>
+                <input type="email" id="delivery-email" name="email" required style="padding: 8px; width: 300px;">
             </div>
             <div style="margin-bottom: 10px;">
                 <label for="delivery-date">Дата доставки:</label><br>
-                <input type="date" id="delivery-date" name="date" required>
+                <input type="date" id="delivery-date" name="date" required style="padding: 8px;">
             </div>
-            <button type="submit" style="padding: 10px 20px; background: blue; color: white; border: none; cursor: pointer;">
-                Подтвердить заказ
+            
+            <h3>Способ оплаты</h3>
+            <div style="margin-bottom: 10px;">
+                <input type="radio" id="payment-card" name="payment" value="card" checked>
+                <label for="payment-card">Оплата картой онлайн</label>
+            </div>
+            <div style="margin-bottom: 10px;">
+                <input type="radio" id="payment-cash" name="payment" value="cash">
+                <label for="payment-cash">Наличными при получении</label>
+            </div>
+            <div style="margin-bottom: 10px;">
+                <input type="radio" id="payment-transfer" name="payment" value="transfer">
+                <label for="payment-transfer">Перевод на карту</label>
+            </div>
+
+            <h3>Подтверждение</h3>
+            <div style="margin-bottom: 10px; background: #f0f0f0; padding: 10px; display: inline-block; border-radius: 5px;">
+                <label for="captcha">Решите пример: ${captchaQuestion} = </label>
+                <input type="number" id="captcha" name="captcha" required style="padding: 5px; width: 60px;">
+                <input type="hidden" id="captcha-answer" value="${captchaAnswer}">
+            </div>
+
+            <br><br>
+            <button type="submit" id="submit-order" style="padding: 12px 24px; background: #28a745; color: white; border: none; cursor: pointer; font-size: 16px;">
+                Оформить заказ
             </button>
         </form>
         <div id="delivery-message" style="margin-top: 15px; font-weight: bold;"></div>
     `;
 
     const dateInput = document.getElementById('delivery-date') as HTMLInputElement;
-    dateInput.min = new Date().toISOString().split("T")[0];
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    dateInput.min = tomorrow.toISOString().split("T")[0];
 
     document.getElementById('delivery-form')?.addEventListener('submit', handleDeliverySubmit);
 };
@@ -375,33 +410,80 @@ const handleDeliverySubmit = async (event: Event): Promise<void> => {
     const messageBox = document.getElementById('delivery-message');
     if (!messageBox) return;
 
+    const captchaInput = form.elements.namedItem('captcha') as HTMLInputElement;
+    const captchaAnswerInput = document.getElementById('captcha-answer') as HTMLInputElement;
+    const userAnswer = parseInt(captchaInput.value);
+    const correctAnswer = parseInt(captchaAnswerInput.value);
+
+    if (userAnswer !== correctAnswer) {
+        messageBox.style.color = 'red';
+        messageBox.textContent = 'Неверный ответ на капчу. Попробуйте ещё раз.';
+        
+        const captchaNum1 = Math.floor(Math.random() * 10) + 1;
+        const captchaNum2 = Math.floor(Math.random() * 10) + 1;
+        const newAnswer = captchaNum1 + captchaNum2;
+        const captchaLabel = form.querySelector('label[for="captcha"]');
+        if (captchaLabel) {
+            captchaLabel.textContent = `Решите пример: ${captchaNum1} + ${captchaNum2} = `;
+        }
+        captchaAnswerInput.value = newAnswer.toString();
+        captchaInput.value = '';
+        return;
+    }
+
     const address = (form.elements.namedItem('address') as HTMLInputElement).value;
     const phone = (form.elements.namedItem('phone') as HTMLInputElement).value;
     const email = (form.elements.namedItem('email') as HTMLInputElement).value;
     const date = (form.elements.namedItem('date') as HTMLInputElement).value;
+    const payment = (form.elements.namedItem('payment') as RadioNodeList).value;
 
     try {
         const response = await fetch('/api/delivery/order', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ address, phone, email, date })
+            body: JSON.stringify({ address, phone, email, date, payment })
         });
+
+        const result = await response.json();
 
         if (response.ok) {
             messageBox.style.color = 'green';
-            messageBox.textContent = 'Заказ успешно оформлен! Корзина очищена.';
+            messageBox.innerHTML = `Заказ #${result.order.id} успешно оформлен!<br>
+                Способ оплаты: ${getPaymentName(payment)}<br>
+                Сумма: ${result.order.totalPrice} руб.<br>
+                Дата доставки: ${formatDate(result.order.date)}<br>
+                <em>Корзина очищена.</em>`;
             
-            setTimeout(renderHome, 3000);
+            const submitBtn = document.getElementById('submit-order') as HTMLButtonElement;
+            if (submitBtn) {
+                submitBtn.disabled = true;
+                submitBtn.textContent = 'Заказ оформлен';
+            }
+            
+            setTimeout(renderHome, 5000);
         } else {
-            const errData = await response.json();
             messageBox.style.color = 'red';
-            messageBox.textContent = 'Ошибка: ' + errData.message;
+            messageBox.textContent = 'Ошибка: ' + result.message;
         }
     } catch (error) {
         messageBox.style.color = 'red';
         messageBox.textContent = 'Ошибка связи с сервером.';
     }
 };
+
+function getPaymentName(payment: string): string {
+    switch (payment) {
+        case 'card': return 'Оплата картой онлайн';
+        case 'cash': return 'Наличными при получении';
+        case 'transfer': return 'Перевод на карту';
+        default: return payment;
+    }
+}
+
+function formatDate(dateStr: string): string {
+    const date = new Date(dateStr);
+    return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+}
 
 document.getElementById('nav-home')?.addEventListener('click', renderHome);
 document.getElementById('nav-register')?.addEventListener('click', renderRegister);

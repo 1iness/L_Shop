@@ -1,0 +1,19 @@
+[
+  {
+    "id": "1774286106849",
+    "username": "веруцкпр",
+    "address": "одинцова 71/4 кв43",
+    "phone": "+375336444537",
+    "email": "ruslannikitsin@gmail.com",
+    "date": "2026-03-27",
+    "items": [
+      {
+        "productId": "2",
+        "quantity": 2
+      }
+    ],
+    "totalPrice": 16,
+    "status": "pending",
+    "createdAt": "2026-03-23T17:15:06.849Z"
+  }
+]
