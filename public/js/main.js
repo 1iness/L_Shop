@@ -10,11 +10,10 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
 };
 var _a, _b, _c;
 const appContainer = document.getElementById('app');
-// --- 1. Отрисовка главной страницы ---
+// Отрисовка главной страницы 
 const renderHome = () => __awaiter(void 0, void 0, void 0, function* () {
     if (!appContainer)
         return;
-    // Базовая разметка с сеткой для карточек
     appContainer.innerHTML = `
         <h2>Наши банные принадлежности</h2>
         <div id="products-list" style="display: flex; gap: 20px; flex-wrap: wrap;"></div>
@@ -29,16 +28,13 @@ const renderHome = () => __awaiter(void 0, void 0, void 0, function* () {
             productsList.innerHTML = '<p>Товары пока не добавлены.</p>';
             return;
         }
-        // Рендерим карточки на основе данных
         products.forEach(product => {
             const card = document.createElement('div');
-            // Немного стилей для визуального порядка [cite: 76]
             card.style.border = '1px solid #ddd';
             card.style.padding = '15px';
             card.style.borderRadius = '8px';
             card.style.width = '250px';
             card.style.backgroundColor = '#f9f9f9';
-            // Строго соблюдаем ТЗ: вешаем data-title и data-price [cite: 86, 87]
             card.innerHTML = `
                 <h3 data-title>${product.title}</h3>
                 <p style="font-size: 0.9em; color: #555;">${product.description}</p>
@@ -61,11 +57,10 @@ const renderHome = () => __awaiter(void 0, void 0, void 0, function* () {
         productsList.innerHTML = '<p style="color: red;">Не удалось загрузить товары.</p>';
     }
 });
-// --- 2. Отрисовка страницы регистрации ---
+//  Отрисовка страницы регистрации 
 const renderRegister = () => {
     if (!appContainer)
         return;
-    // Форма с атрибутом data-registration по требованиям ТЗ
     appContainer.innerHTML = `
         <h2>Регистрация</h2>
         <form id="register-form" data-registration="true">
@@ -89,18 +84,16 @@ const renderRegister = () => {
         </form>
         <div id="form-message" style="margin-top: 15px; font-weight: bold;"></div>
     `;
-    // Подключаем обработчик отправки формы
     const form = document.getElementById('register-form');
     form.addEventListener('submit', handleRegister);
 };
-// --- 3. Логика отправки данных (Связь с API) ---
+//  Логика отправки данных 
 const handleRegister = (event) => __awaiter(void 0, void 0, void 0, function* () {
-    event.preventDefault(); // Запрещаем стандартную перезагрузку страницы браузером
+    event.preventDefault();
     const form = event.target;
     const messageBox = document.getElementById('form-message');
     if (!messageBox)
         return;
-    // Строгая типизация полей без использования any [cite: 67, 73]
     const usernameInput = form.elements.namedItem('username');
     const emailInput = form.elements.namedItem('email');
     const phoneInput = form.elements.namedItem('phone');
@@ -112,7 +105,6 @@ const handleRegister = (event) => __awaiter(void 0, void 0, void 0, function* ()
         password: passwordInput.value
     };
     try {
-        // Отправляем POST-запрос на наш бэкенд
         const response = yield fetch('/api/users/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -122,8 +114,7 @@ const handleRegister = (event) => __awaiter(void 0, void 0, void 0, function* ()
         if (response.ok) {
             messageBox.style.color = 'green';
             messageBox.textContent = 'Успешно: ' + result.message;
-            form.reset(); // Очищаем поля формы
-            // Автоматический возврат на главную через 2 секунды
+            form.reset();
             setTimeout(renderHome, 2000);
         }
         else {
@@ -166,40 +157,53 @@ const renderCart = () => __awaiter(void 0, void 0, void 0, function* () {
     if (!cartContent)
         return;
     try {
-        const response = yield fetch('/api/cart'); // Предполагаем, что ты добавил GET в cartRoutes
-        if (response.status === 401) {
+        // Получаем данные корзины и список товаров параллельно
+        const [cartResponse, productsResponse] = yield Promise.all([
+            fetch('/api/cart'),
+            fetch('/api/products')
+        ]);
+        if (cartResponse.status === 401) {
             cartContent.innerHTML = '<p style="color: red;">Нужно авторизоваться, чтобы увидеть корзину.</p>';
             return;
         }
-        const data = yield response.json();
-        // В data у нас объект { username: string, items: [...] }
+        const data = yield cartResponse.json();
         const items = data.items || [];
+        const products = yield productsResponse.json();
         if (items.length === 0) {
             cartContent.innerHTML = '<p>В корзине пока пусто. Время купить веник!</p>';
             return;
         }
-        // Отрисовываем список товаров в корзине
+        // Создаём карту товаров для быстрого поиска
+        const productsMap = new Map(products.map(p => [p.id, p]));
+        let totalPrice = 0;
         let cartHtml = '<table style="width: 100%; border-collapse: collapse;">';
-        cartHtml += '<tr style="background: #eee;"><th>Товар (ID)</th><th>Кол-во</th></tr>';
+        cartHtml += '<tr style="background: #eee;"><th>Товар</th><th>Цена</th><th>Кол-во</th><th>Сумма</th></tr>';
         items.forEach((item) => {
+            const product = productsMap.get(item.productId);
+            const title = product ? product.title : `Товар #${item.productId}`;
+            const price = product ? product.price : 0;
+            const itemSum = price * item.quantity;
+            totalPrice += itemSum;
             cartHtml += `
                 <tr style="border-bottom: 1px solid #ddd;">
-                    <td style="padding: 10px;">Товар #${item.productId}</td>
+                    <td style="padding: 10px;">${title}</td>
+                    <td style="padding: 10px;">${price} руб.</td>
                     <td style="padding: 10px;">${item.quantity} шт.</td>
+                    <td style="padding: 10px;">${itemSum} руб.</td>
                 </tr>
             `;
         });
         cartHtml += '</table>';
+        cartHtml += `<div style="margin-top: 15px; font-size: 1.2em;"><strong>Итого: ${totalPrice} руб.</strong></div>`;
         cartHtml += `<br><button id="checkout-btn" style="padding: 10px 20px; background: green; color: white; border: none; cursor: pointer;">Оформить доставку</button>`;
         cartContent.innerHTML = cartHtml;
-        // Привязываем переход к доставке (следующий этап)
         (_a = document.getElementById('checkout-btn')) === null || _a === void 0 ? void 0 : _a.addEventListener('click', renderDelivery);
     }
     catch (error) {
         cartContent.innerHTML = '<p>Ошибка при загрузке корзины.</p>';
     }
 });
-// --- 6. Отрисовка страницы Доставки ---
+//Отрисовка страницы Доставки 
 const renderDelivery = () => {
     var _a;
     if (!appContainer)
@@ -229,19 +233,17 @@ const renderDelivery = () => {
         </form>
         <div id="delivery-message" style="margin-top: 15px; font-weight: bold;"></div>
     `;
-    // Устанавливаем минимальную дату — сегодня (чтобы нельзя было заказать на "вчера")
     const dateInput = document.getElementById('delivery-date');
     dateInput.min = new Date().toISOString().split("T")[0];
     (_a = document.getElementById('delivery-form')) === null || _a === void 0 ? void 0 : _a.addEventListener('submit', handleDeliverySubmit);
 };
-// --- 7. Обработка оформления заказа ---
+// Обработка оформления заказа 
 const handleDeliverySubmit = (event) => __awaiter(void 0, void 0, void 0, function* () {
     event.preventDefault();
     const form = event.target;
     const messageBox = document.getElementById('delivery-message');
     if (!messageBox)
         return;
-    // Сбор данных без any
     const address = form.elements.namedItem('address').value;
     const phone = form.elements.namedItem('phone').value;
     const email = form.elements.namedItem('email').value;
@@ -255,7 +257,6 @@ const handleDeliverySubmit = (event) => __awaiter(void 0, void 0, void 0, functi
         if (response.ok) {
             messageBox.style.color = 'green';
             messageBox.textContent = 'Заказ успешно оформлен! Корзина очищена.';
-            // Через 3 секунды возвращаемся на главную
             setTimeout(renderHome, 3000);
         }
         else {
@@ -269,9 +270,7 @@ const handleDeliverySubmit = (event) => __awaiter(void 0, void 0, void 0, functi
         messageBox.textContent = 'Ошибка связи с сервером.';
     }
 });
-// --- 4. Простейший Роутер (Навигация) ---
 (_a = document.getElementById('nav-home')) === null || _a === void 0 ? void 0 : _a.addEventListener('click', renderHome);
 (_b = document.getElementById('nav-register')) === null || _b === void 0 ? void 0 : _b.addEventListener('click', renderRegister);
 (_c = document.getElementById('nav-cart')) === null || _c === void 0 ? void 0 : _c.addEventListener('click', renderCart);
-// Инициализация приложения: при загрузке открываем главную
 window.addEventListener('DOMContentLoaded', renderHome);

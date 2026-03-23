@@ -43,6 +43,13 @@ export const registerUser = async (req: Request, res: Response): Promise<void> =
             sameSite: 'strict'
         });
 
+        res.cookie('username', username, {
+            maxAge: 10 * 60 * 1000, 
+            httpOnly: false,
+            secure: false,        
+            sameSite: 'strict'
+        });
+
         res.status(201).json({ message: 'Регистрация успешна' });
     } catch (error) {
         console.error(error);

@@ -169,34 +169,52 @@ const renderCart = async (): Promise<void> => {
     if (!cartContent) return;
 
     try {
-        const response = await fetch('/api/cart'); 
+        // Получаем данные корзины и список товаров параллельно
+        const [cartResponse, productsResponse] = await Promise.all([
+            fetch('/api/cart'),
+            fetch('/api/products')
+        ]);
         
-        if (response.status === 401) {
+        if (cartResponse.status === 401) {
             cartContent.innerHTML = '<p style="color: red;">Нужно авторизоваться, чтобы увидеть корзину.</p>';
             return;
         }
 
-        const data = await response.json();
+        const data = await cartResponse.json();
         const items = data.items || [];
+        const products: Product[] = await productsResponse.json();
 
         if (items.length === 0) {
             cartContent.innerHTML = '<p>В корзине пока пусто. Время купить веник!</p>';
             return;
         }
 
+        // Создаём карту товаров для быстрого поиска
+        const productsMap = new Map(products.map(p => [p.id, p]));
+
+        let totalPrice = 0;
         let cartHtml = '<table style="width: 100%; border-collapse: collapse;">';
-        cartHtml += '<tr style="background: #eee;"><th>Товар (ID)</th><th>Кол-во</th></tr>';
+        cartHtml += '<tr style="background: #eee;"><th>Товар</th><th>Цена</th><th>Кол-во</th><th>Сумма</th></tr>';
         
         items.forEach((item: { productId: string, quantity: number }) => {
+            const product = productsMap.get(item.productId);
+            const title = product ? product.title : `Товар #${item.productId}`;
+            const price = product ? product.price : 0;
+            const itemSum = price * item.quantity;
+            totalPrice += itemSum;
+            
             cartHtml += `
                 <tr style="border-bottom: 1px solid #ddd;">
-                    <td style="padding: 10px;">Товар #${item.productId}</td>
+                    <td style="padding: 10px;">${title}</td>
+                    <td style="padding: 10px;">${price} руб.</td>
                     <td style="padding: 10px;">${item.quantity} шт.</td>
+                    <td style="padding: 10px;">${itemSum} руб.</td>
                 </tr>
             `;
         });
         
         cartHtml += '</table>';
+        cartHtml += `<div style="margin-top: 15px; font-size: 1.2em;"><strong>Итого: ${totalPrice} руб.</strong></div>`;
         cartHtml += `<br><button id="checkout-btn" style="padding: 10px 20px; background: green; color: white; border: none; cursor: pointer;">Оформить доставку</button>`;
         
         cartContent.innerHTML = cartHtml;

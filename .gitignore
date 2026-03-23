@@ -21,7 +21,3 @@ Thumbs.db
 # Настройки редакторов
 .vscode/
 .idea/
-
-# Файлы "Базы данных" 
-users.json
-products.json

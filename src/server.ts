@@ -1,5 +1,6 @@
 import userRoutes from './routes/userRoutes.js';
 import productRoutes from './routes/productRoutes.js';
+import cartRoutes from './routes/cartRouter.js';
 import express from 'express';
 import type { Request, Response } from 'express'; 
 import cookieParser from 'cookie-parser';
@@ -12,6 +13,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use('/api/users', userRoutes);
 app.use('/api/products', productRoutes);
+app.use('/api/cart', cartRoutes);
 app.use(express.static(path.resolve('public')));
 
 app.get('/api/health', (req: Request, res: Response) => {
