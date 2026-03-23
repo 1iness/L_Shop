@@ -177,7 +177,7 @@ const renderCart = () => __awaiter(void 0, void 0, void 0, function* () {
         const productsMap = new Map(products.map(p => [p.id, p]));
         let totalPrice = 0;
         let cartHtml = '<table style="width: 100%; border-collapse: collapse;">';
-        cartHtml += '<tr style="background: #eee;"><th>Товар</th><th>Цена</th><th>Кол-во</th><th>Сумма</th></tr>';
+        cartHtml += '<tr style="background: #eee;"><th>Товар</th><th>Цена</th><th>Кол-во</th><th>Сумма</th><th>Действия</th></tr>';
         items.forEach((item) => {
             const product = productsMap.get(item.productId);
             const title = product ? product.title : `Товар #${item.productId}`;
@@ -185,22 +185,129 @@ const renderCart = () => __awaiter(void 0, void 0, void 0, function* () {
             const itemSum = price * item.quantity;
             totalPrice += itemSum;
             cartHtml += `
-                <tr style="border-bottom: 1px solid #ddd;">
+                <tr style="border-bottom: 1px solid #ddd;" id="cart-item-${item.productId}">
                     <td style="padding: 10px;">${title}</td>
                     <td style="padding: 10px;">${price} руб.</td>
-                    <td style="padding: 10px;">${item.quantity} шт.</td>
-                    <td style="padding: 10px;">${itemSum} руб.</td>
+                    <td style="padding: 10px;">
+                        <button onclick="handleQuantityChange('${item.productId}', 'decrease')" style="padding: 2px 8px;">-</button>
+                        <span id="qty-${item.productId}" style="margin: 0 8px;">${item.quantity}</span>
+                        <button onclick="handleQuantityChange('${item.productId}', 'increase')" style="padding: 2px 8px;">+</button>
+                    </td>
+                    <td style="padding: 10px;" id="sum-${item.productId}">${itemSum} руб.</td>
+                    <td style="padding: 10px;">
+                        <button onclick="handleRemoveItem('${item.productId}')" style="padding: 5px 10px; background: #dc3545; color: white; border: none; cursor: pointer;">Удалить</button>
+                    </td>
                 </tr>
             `;
         });
         cartHtml += '</table>';
-        cartHtml += `<div style="margin-top: 15px; font-size: 1.2em;"><strong>Итого: ${totalPrice} руб.</strong></div>`;
+        cartHtml += `<div style="margin-top: 15px; font-size: 1.2em;"><strong>Итого: <span id="cart-total">${totalPrice}</span> руб.</strong></div>`;
         cartHtml += `<br><button id="checkout-btn" style="padding: 10px 20px; background: green; color: white; border: none; cursor: pointer;">Оформить доставку</button>`;
         cartContent.innerHTML = cartHtml;
         (_a = document.getElementById('checkout-btn')) === null || _a === void 0 ? void 0 : _a.addEventListener('click', renderDelivery);
     }
     catch (error) {
         cartContent.innerHTML = '<p>Ошибка при загрузке корзины.</p>';
+    }
+});
+// Обработчик изменения количества (+/-)
+window.handleQuantityChange = (productId, action) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const endpoint = action === 'increase' ? '/api/cart/increase' : '/api/cart/decrease';
+        const response = yield fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ productId })
+        });
+        if (response.ok) {
+            const data = yield response.json();
+            const userCart = data.cart;
+            const qtySpan = document.getElementById(`qty-${productId}`);
+            const sumSpan = document.getElementById(`sum-${productId}`);
+            const totalSpan = document.getElementById('cart-total');
+            const item = userCart.items.find((i) => i.productId === productId);
+            if (item) {
+                const productsResponse = yield fetch('/api/products');
+                const products = yield productsResponse.json();
+                const product = products.find(p => p.id === productId);
+                const price = product ? product.price : 0;
+                if (qtySpan)
+                    qtySpan.textContent = item.quantity.toString();
+                if (sumSpan)
+                    sumSpan.textContent = `${price * item.quantity} руб.`;
+            }
+            else {
+                const row = document.getElementById(`cart-item-${productId}`);
+                if (row)
+                    row.remove();
+                let newTotal = 0;
+                for (const i of userCart.items) {
+                    const p = yield fetch('/api/products').then(r => r.json()).then(products => products.find((prod) => prod.id === i.productId));
+                    if (p)
+                        newTotal += p.price * i.quantity;
+                }
+                if (totalSpan)
+                    totalSpan.textContent = newTotal.toString();
+            }
+            let total = 0;
+            const items = document.querySelectorAll('tr[id^="cart-item-"]');
+            items.forEach(row => {
+                var _a;
+                const id = row.id.replace('cart-item-', '');
+                const sumEl = document.getElementById(`sum-${id}`);
+                if (sumEl) {
+                    const sumText = ((_a = sumEl.textContent) === null || _a === void 0 ? void 0 : _a.replace(' руб.', '')) || '0';
+                    total += parseInt(sumText);
+                }
+            });
+            if (totalSpan)
+                totalSpan.textContent = total.toString();
+            if (userCart.items.length === 0) {
+                const appContainer = document.getElementById('app');
+                if (appContainer) {
+                    appContainer.innerHTML = '<h2>Ваша корзина</h2><p>В корзине пока пусто. Время купить веник!</p>';
+                }
+            }
+        }
+    }
+    catch (error) {
+        console.error('Ошибка изменения количества:', error);
+    }
+});
+// Обработчик удаления товара
+window.handleRemoveItem = (productId) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const response = yield fetch('/api/cart/remove', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ productId })
+        });
+        if (response.ok) {
+            const row = document.getElementById(`cart-item-${productId}`);
+            if (row)
+                row.remove();
+            const totalSpan = document.getElementById('cart-total');
+            let total = 0;
+            const items = document.querySelectorAll('tr[id^="cart-item-"]');
+            items.forEach(r => {
+                var _a;
+                const id = r.id.replace('cart-item-', '');
+                const sumEl = document.getElementById(`sum-${id}`);
+                if (sumEl) {
+                    const sumText = ((_a = sumEl.textContent) === null || _a === void 0 ? void 0 : _a.replace(' руб.', '')) || '0';
+                    total += parseInt(sumText);
+                }
+            });
+            if (totalSpan)
+                totalSpan.textContent = total.toString();
+            const appContainer = document.getElementById('app');
+            if (appContainer && items.length === 0) {
+                appContainer.innerHTML = '<h2>Ваша корзина</h2><p>В корзине пока пусто. Время купить веник!</p>';
+            }
+        }
+    }
+    catch (error) {
+        console.error('Ошибка удаления товара:', error);
     }
 });
 //Отрисовка страницы Доставки 
