@@ -54,6 +54,8 @@ const renderHome = async (): Promise<void> => {
                     ${product.isAvailable ? 'В корзину' : 'Нет в наличии'}
                 </button>
             `;
+            const buyBtn = card.querySelector('button');
+            buyBtn?.addEventListener('click', () => addToCartHandler(product.id));
             productsList.appendChild(card);
         });
 
@@ -146,6 +148,27 @@ const form = event.target as HTMLFormElement;
     }
 };
 
+const addToCartHandler = async (productId: string): Promise<void> => {
+    try {
+        const response = await fetch('/api/cart/add', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ productId, quantity: 1 })
+        });
+
+        if (response.status === 401) {
+            alert('Сначала нужно войти в аккаунт!');
+            renderRegister();
+            return;
+        }
+
+        if (response.ok) {
+            alert('Товар в корзине!');
+        }
+    } catch (error) {
+        console.error('Ошибка при добавлении в корзину', error);
+    }
+};
 // --- 4. Простейший Роутер (Навигация) ---
 document.getElementById('nav-home')?.addEventListener('click', renderHome);
 document.getElementById('nav-register')?.addEventListener('click', renderRegister);
