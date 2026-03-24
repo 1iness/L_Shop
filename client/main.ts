@@ -12,58 +12,226 @@ interface Window {
     handleRemoveItem: (productId: string) => Promise<void>;
 }
 
+interface FilterState {
+    search: string;
+    category: string;
+    availability: string;
+    sort: string;
+}
+
 const appContainer = document.getElementById('app');
 
-// Отрисовка главной страницы 
+let allProducts: Product[] = [];
+let currentFilters: FilterState = {
+    search: '',
+    category: 'all',
+    availability: 'all',
+    sort: 'default'
+};
+
 const renderHome = async (): Promise<void> => {
     if (!appContainer) return;
     
     appContainer.innerHTML = `
-        <h2>Наши банные принадлежности</h2>
-        <div id="products-list" style="display: flex; gap: 20px; flex-wrap: wrap;"></div>
+        
+        <!-- Панель поиска и фильтров -->
+        <div class="filters-panel">
+            <div class="search-box">
+                <input type="text" id="search-input" placeholder="Поиск по названию или описанию...">
+            </div>
+            
+            <div class="filter-group">
+                <label for="category-filter">Категория:</label>
+                <select id="category-filter">
+                    <option value="all">Все категории</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label for="availability-filter">Наличие:</label>
+                <select id="availability-filter">
+                    <option value="all">Все товары</option>
+                    <option value="available">В наличии</option>
+                    <option value="unavailable">Нет в наличии</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label for="sort-select">Сортировка:</label>
+                <select id="sort-select">
+                    <option value="default">По умолчанию</option>
+                    <option value="price-asc">Цена: по возрастанию</option>
+                    <option value="price-desc">Цена: по убыванию</option>
+                </select>
+            </div>
+            
+            <button id="reset-filters" class="reset-btn">Сбросить фильтры</button>
+        </div>
+        
+        <div id="products-list" class="products-grid"></div>
+        <div id="no-results" class="no-results" style="display: none;">Товары не найдены</div>
     `;
     
+    await loadProducts();
+    
+    setupFilterListeners();
+};
+
+const loadProducts = async (): Promise<void> => {
     const productsList = document.getElementById('products-list');
     if (!productsList) return;
 
     try {
         const response = await fetch('/api/products');
-        const products: Product[] = await response.json();
+        allProducts = await response.json();
 
-        if (products.length === 0) {
+        if (allProducts.length === 0) {
             productsList.innerHTML = '<p>Товары пока не добавлены.</p>';
             return;
         }
-
-        products.forEach(product => {
-            const card = document.createElement('div');
-            card.style.border = '1px solid #ddd';
-            card.style.padding = '15px';
-            card.style.borderRadius = '8px';
-            card.style.width = '250px';
-            card.style.backgroundColor = '#f9f9f9';
-
-            card.innerHTML = `
-                <h3 data-title>${product.title}</h3>
-                <p style="font-size: 0.9em; color: #555;">${product.description}</p>
-                <p><strong>Цена:</strong> <span data-price>${product.price} руб.</span></p>
-                <p><em>Категория: ${product.category}</em></p>
-                <button 
-                    style="width: 100%; padding: 8px; cursor: pointer;" 
-                    ${!product.isAvailable ? 'disabled' : ''}
-                >
-                    ${product.isAvailable ? 'В корзину' : 'Нет в наличии'}
-                </button>
-            `;
-            const buyBtn = card.querySelector('button');
-            buyBtn?.addEventListener('click', () => addToCartHandler(product.id));
-            productsList.appendChild(card);
-        });
-
+        
+        populateCategoryFilter();
+        
+        applyFiltersAndRender();
     } catch (error) {
         console.error('Ошибка загрузки товаров', error);
         productsList.innerHTML = '<p style="color: red;">Не удалось загрузить товары.</p>';
     }
+};
+
+const populateCategoryFilter = (): void => {
+    const categoryFilter = document.getElementById('category-filter') as HTMLSelectElement;
+    if (!categoryFilter) return;
+    
+    const categories = [...new Set(allProducts.map(p => p.category))].sort();
+
+    categoryFilter.innerHTML = '<option value="all">Все категории</option>';
+    categories.forEach(category => {
+        const option = document.createElement('option');
+        option.value = category;
+        option.textContent = category.charAt(0).toUpperCase() + category.slice(1);
+        categoryFilter.appendChild(option);
+    });
+};
+
+const setupFilterListeners = (): void => {
+    const searchInput = document.getElementById('search-input') as HTMLInputElement;
+    const categoryFilter = document.getElementById('category-filter') as HTMLSelectElement;
+    const availabilityFilter = document.getElementById('availability-filter') as HTMLSelectElement;
+    const sortSelect = document.getElementById('sort-select') as HTMLSelectElement;
+    const resetBtn = document.getElementById('reset-filters');
+    
+    // Поиск
+    searchInput.addEventListener('input', (e) => {
+        currentFilters.search = (e.target as HTMLInputElement).value.toLowerCase().trim();
+        applyFiltersAndRender();
+    });
+    
+    // Категория
+    categoryFilter.addEventListener('change', (e) => {
+        currentFilters.category = (e.target as HTMLSelectElement).value;
+        applyFiltersAndRender();
+    });
+    
+    // Наличие
+    availabilityFilter.addEventListener('change', (e) => {
+        currentFilters.availability = (e.target as HTMLSelectElement).value;
+        applyFiltersAndRender();
+    });
+    
+    // Сортировка
+    sortSelect.addEventListener('change', (e) => {
+        currentFilters.sort = (e.target as HTMLSelectElement).value;
+        applyFiltersAndRender();
+    });
+    
+    // Сброс фильтров
+    resetBtn?.addEventListener('click', () => {
+        currentFilters = {
+            search: '',
+            category: 'all',
+            availability: 'all',
+            sort: 'default'
+        };
+        
+        searchInput.value = '';
+        categoryFilter.value = 'all';
+        availabilityFilter.value = 'all';
+        sortSelect.value = 'default';
+        
+        applyFiltersAndRender();
+    });
+};
+
+// Применение фильтров и отрисовка товаров
+const applyFiltersAndRender = (): void => {
+    const productsList = document.getElementById('products-list');
+    const noResults = document.getElementById('no-results');
+    
+    if (!productsList) return;
+    
+    // Фильтрация
+    let filteredProducts = allProducts.filter(product => {
+        // Поиск по имени или описанию
+        const matchesSearch = currentFilters.search === '' ||
+            product.title.toLowerCase().includes(currentFilters.search) ||
+            product.description.toLowerCase().includes(currentFilters.search);
+        
+        // Фильтр по категории
+        const matchesCategory = currentFilters.category === 'all' ||
+            product.category === currentFilters.category;
+        
+        // Фильтр по наличию
+        let matchesAvailability = true;
+        if (currentFilters.availability === 'available') {
+            matchesAvailability = product.isAvailable === true;
+        } else if (currentFilters.availability === 'unavailable') {
+            matchesAvailability = product.isAvailable === false;
+        }
+        
+        return matchesSearch && matchesCategory && matchesAvailability;
+    });
+    
+    // Сортировка
+    if (currentFilters.sort === 'price-asc') {
+        filteredProducts.sort((a, b) => a.price - b.price);
+    } else if (currentFilters.sort === 'price-desc') {
+        filteredProducts.sort((a, b) => b.price - a.price);
+    }
+    
+    // Отображение
+    if (filteredProducts.length === 0) {
+        productsList.innerHTML = '';
+        if (noResults) noResults.style.display = 'block';
+        return;
+    }
+    
+    if (noResults) noResults.style.display = 'none';
+    
+    // Очищаем и отрисовываем товары
+    productsList.innerHTML = '';
+    filteredProducts.forEach(product => {
+        const card = document.createElement('div');
+        card.className = 'product-card';
+        card.innerHTML = `
+            <h3>${product.title}</h3>
+            <p class="product-description">${product.description}</p>
+            <p class="product-price"><strong>Цена:</strong> ${product.price} руб.</p>
+            <p class="product-category"><em>Категория: ${product.category}</em></p>
+            <p class="product-availability ${product.isAvailable ? 'available' : 'unavailable'}">
+                ${product.isAvailable ? '✓ В наличии' : '✗ Нет в наличии'}
+            </p>
+            <button 
+                class="add-to-cart-btn"
+                ${!product.isAvailable ? 'disabled' : ''}
+            >
+                ${product.isAvailable ? 'В корзину' : 'Нет в наличии'}
+            </button>
+        `;
+        const buyBtn = card.querySelector('button');
+        buyBtn?.addEventListener('click', () => addToCartHandler(product.id));
+        productsList.appendChild(card);
+    });
 };
 
 //  Отрисовка страницы регистрации 
@@ -359,7 +527,7 @@ const renderCart = async (): Promise<void> => {
         
         cartHtml += '</table>';
         cartHtml += `<div style="margin-top: 15px; font-size: 1.2em;"><strong>Итого: <span id="cart-total">${totalPrice}</span> руб.</strong></div>`;
-        cartHtml += `<br><button id="checkout-btn" style="padding: 10px 20px; background: green; color: white; border: none; cursor: pointer;">Оформить доставку</button>`;
+        cartHtml += `<br><button id="checkout-btn" style="padding: 10px 20px; background: #4caf50; color: white; border: none; cursor: pointer;">Оформить доставку</button>`;
         
         cartContent.innerHTML = cartHtml;
         document.getElementById('checkout-btn')?.addEventListener('click', renderDelivery);
@@ -617,11 +785,68 @@ function formatDate(dateStr: string): string {
     return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 
+// Отрисовка страницы профиля
+const renderProfile = async (): Promise<void> => {
+    if (!appContainer) return;
+    
+    appContainer.innerHTML = `
+        <h2>Личный кабинет</h2>
+        <div id="profile-content">
+            <div class="profile-card">
+                <div class="profile-info" id="profile-info">Загрузка...</div>
+                <button id="logout-btn" class="logout-btn">Выйти из аккаунта</button>
+            </div>
+        </div>
+    `;
+    
+    const profileInfo = document.getElementById('profile-info');
+    const logoutBtn = document.getElementById('logout-btn');
+    
+    try {
+        const response = await fetch('/api/users/me');
+        if (response.ok) {
+            const user = await response.json();
+            if (profileInfo) {
+                profileInfo.innerHTML = `
+                    <div class="profile-field">
+                        <span class="profile-label">Имя пользователя:</span>
+                        <span class="profile-value">${user.username}</span>
+                    </div>
+                    <div class="profile-field">
+                        <span class="profile-label">Email:</span>
+                        <span class="profile-value">${user.email || 'Не указан'}</span>
+                    </div>
+                    <div class="profile-field">
+                        <span class="profile-label">Телефон:</span>
+                        <span class="profile-value">${user.phone || 'Не указан'}</span>
+                    </div>
+                `;
+            }
+        } else {
+            if (profileInfo) profileInfo.innerHTML = '<p>Не удалось загрузить данные профиля</p>';
+        }
+    } catch (error) {
+        console.error('Ошибка загрузки профиля:', error);
+        if (profileInfo) profileInfo.innerHTML = '<p>Ошибка загрузки профиля</p>';
+    }
+    
+    logoutBtn?.addEventListener('click', async () => {
+        try {
+            await fetch('/api/users/logout', { method: 'POST' });
+            hideUserInfo();
+            renderHome();
+        } catch (error) {
+            console.error('Ошибка выхода:', error);
+        }
+    });
+};
+
 document.getElementById('nav-home')?.addEventListener('click', renderHome);
 document.getElementById('nav-login')?.addEventListener('click', renderLogin);
 document.getElementById('nav-register')?.addEventListener('click', renderRegister);
 document.getElementById('nav-cart')?.addEventListener('click', renderCart);
 document.getElementById('nav-orders')?.addEventListener('click', renderOrders);
+document.getElementById('nav-profile')?.addEventListener('click', renderProfile);
 
 // Проверка авторизации при загрузке
 const checkAuth = async (): Promise<void> => {
@@ -637,39 +862,24 @@ const checkAuth = async (): Promise<void> => {
 };
 
 const showUserInfo = (username: string): void => {
-    const userInfo = document.getElementById('user-info');
-    const usernameDisplay = document.getElementById('username-display');
     const navLogin = document.getElementById('nav-login');
     const navRegister = document.getElementById('nav-register');
+    const navProfile = document.getElementById('nav-profile');
     
-    if (userInfo && usernameDisplay) {
-        userInfo.style.display = 'flex';
-        usernameDisplay.textContent = username;
-    }
+    if (navProfile) navProfile.style.display = 'inline-block';
     if (navLogin) navLogin.style.display = 'none';
     if (navRegister) navRegister.style.display = 'none';
 };
 
 const hideUserInfo = (): void => {
-    const userInfo = document.getElementById('user-info');
     const navLogin = document.getElementById('nav-login');
     const navRegister = document.getElementById('nav-register');
+    const navProfile = document.getElementById('nav-profile');
     
-    if (userInfo) userInfo.style.display = 'none';
+    if (navProfile) navProfile.style.display = 'none';
     if (navLogin) navLogin.style.display = 'inline-block';
     if (navRegister) navRegister.style.display = 'inline-block';
 };
-
-// Обработчик выхода
-document.getElementById('nav-logout')?.addEventListener('click', async () => {
-    try {
-        await fetch('/api/users/logout', { method: 'POST' });
-        hideUserInfo();
-        renderHome();
-    } catch (error) {
-        console.error('Ошибка выхода:', error);
-    }
-});
 
 window.addEventListener('DOMContentLoaded', () => {
     renderHome();

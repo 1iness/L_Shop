@@ -22,5 +22,13 @@
     "price": 12,
     "category": "текстиль",
     "isAvailable": false
+  },
+  {
+    "id": "4",
+    "title": "Шапка войлочная 'Банщик'",
+    "description": "Защищает голову от перегрева.",
+    "price": 12,
+    "category": "текстиль",
+    "isAvailable": false
   }
 ]
