@@ -214,19 +214,24 @@ const applyFiltersAndRender = (): void => {
         const card = document.createElement('div');
         card.className = 'product-card';
         card.innerHTML = `
-            <h3>${product.title}</h3>
-            <p class="product-description">${product.description}</p>
-            <p class="product-price"><strong>Цена:</strong> ${product.price} руб.</p>
-            <p class="product-category"><em>Категория: ${product.category}</em></p>
-            <p class="product-availability ${product.isAvailable ? 'available' : 'unavailable'}">
-                ${product.isAvailable ? '✓ В наличии' : '✗ Нет в наличии'}
-            </p>
-            <button 
-                class="add-to-cart-btn"
-                ${!product.isAvailable ? 'disabled' : ''}
-            >
-                ${product.isAvailable ? 'В корзину' : 'Нет в наличии'}
-            </button>
+            <div class="product-image-placeholder">🌿</div>
+            <div class="product-card-content">
+                <h3>${product.title}</h3>
+                <p class="product-description">${product.description}</p>
+                <div class="product-meta">
+                    <span class="product-price">${product.price}</span>
+                    <span class="product-category">${product.category}</span>
+                </div>
+                <p class="product-availability ${product.isAvailable ? 'available' : 'unavailable'}">
+                    ${product.isAvailable ? '✓ В наличии' : '✗ Нет в наличии'}
+                </p>
+                <button 
+                    class="add-to-cart-btn"
+                    ${!product.isAvailable ? 'disabled' : ''}
+                >
+                    ${product.isAvailable ? 'В корзину' : 'Нет в наличии'}
+                </button>
+            </div>
         `;
         const buyBtn = card.querySelector('button');
         buyBtn?.addEventListener('click', () => addToCartHandler(product.id));
@@ -357,27 +362,40 @@ const renderOrders = async (): Promise<void> => {
         const products: Product[] = await productsResponse.json();
         const productsMap = new Map(products.map(p => [p.id, p]));
 
-        let ordersHtml = '<div style="display: flex; flex-direction: column; gap: 20px;">';
+        let ordersHtml = '<div class="orders-container">';
         
         for (const order of orders) {
             ordersHtml += `
-                <div style="border: 1px solid #ddd; padding: 15px; border-radius: 8px; background: #f9f9f9;">
-                    <h3 style="margin-top: 0;">Заказ #${order.id}</h3>
-                    <p><strong>Статус:</strong> <span style="color: ${order.status === 'completed' ? 'green' : order.status === 'cancelled' ? 'red' : 'orange'}">${getStatusName(order.status)}</span></p>
-                    <p><strong>Адрес доставки:</strong> ${order.address}</p>
-                    <p><strong>Дата доставки:</strong> ${formatDate(order.date)}</p>
-                    <p><strong>Сумма:</strong> ${order.totalPrice} руб.</p>
-                    <h4>Товары:</h4>
-                    <ul>
+                <div class="order-card">
+                    <div class="order-header">
+                        <span class="order-id">Заказ #${order.id}</span>
+                        <span class="order-status ${order.status}">${getStatusName(order.status)}</span>
+                    </div>
+                    <div class="order-details">
+                        <div class="order-detail">
+                            <span class="order-detail-label">Адрес доставки</span>
+                            <span class="order-detail-value">${order.address}</span>
+                        </div>
+                        <div class="order-detail">
+                            <span class="order-detail-label">Дата доставки</span>
+                            <span class="order-detail-value">${formatDate(order.date)}</span>
+                        </div>
+                        <div class="order-detail">
+                            <span class="order-detail-label">Сумма заказа</span>
+                            <span class="order-detail-value">${order.totalPrice} ₽</span>
+                        </div>
+                    </div>
+                    <div class="order-items">
+                        <div class="order-items-title">Товары в заказе</div>
             `;
             
             for (const item of order.items) {
                 const product = productsMap.get(item.productId);
                 const title = product ? product.title : `Товар #${item.productId}`;
-                ordersHtml += `<li>${title} - ${item.quantity} шт.</li>`;
+                ordersHtml += `<div class="order-item"><span class="order-item-name">${title}</span><span class="order-item-qty">${item.quantity} шт.</span></div>`;
             }
             
-            ordersHtml += '</ul></div>';
+            ordersHtml += '</div></div>';
         }
         
         ordersHtml += '</div>';
@@ -498,8 +516,8 @@ const renderCart = async (): Promise<void> => {
         const productsMap = new Map(products.map(p => [p.id, p]));
 
         let totalPrice = 0;
-        let cartHtml = '<table style="width: 100%; border-collapse: collapse;">';
-        cartHtml += '<tr style="background: #eee;"><th>Товар</th><th>Цена</th><th>Кол-во</th><th>Сумма</th><th>Действия</th></tr>';
+        let cartHtml = '<div class="cart-container"><table class="cart-table">';
+        cartHtml += '<thead><tr><th>Товар</th><th>Цена</th><th>Кол-во</th><th>Сумма</th><th>Действия</th></tr></thead><tbody>';
         
         items.forEach((item: { productId: string, quantity: number }) => {
             const product = productsMap.get(item.productId);
@@ -509,25 +527,27 @@ const renderCart = async (): Promise<void> => {
             totalPrice += itemSum;
             
             cartHtml += `
-                <tr style="border-bottom: 1px solid #ddd;" id="cart-item-${item.productId}">
-                    <td style="padding: 10px;">${title}</td>
-                    <td style="padding: 10px;">${price} руб.</td>
-                    <td style="padding: 10px;">
-                        <button onclick="handleQuantityChange('${item.productId}', 'decrease')" style="padding: 2px 8px;">-</button>
-                        <span id="qty-${item.productId}" style="margin: 0 8px;">${item.quantity}</span>
-                        <button onclick="handleQuantityChange('${item.productId}', 'increase')" style="padding: 2px 8px;">+</button>
+                <tr id="cart-item-${item.productId}">
+                    <td class="cart-item-title">${title}</td>
+                    <td class="cart-item-price">${price} ₽</td>
+                    <td>
+                        <div class="cart-quantity">
+                            <button class="cart-quantity-btn" onclick="handleQuantityChange('${item.productId}', 'decrease')">−</button>
+                            <span id="qty-${item.productId}">${item.quantity}</span>
+                            <button class="cart-quantity-btn" onclick="handleQuantityChange('${item.productId}', 'increase')">+</button>
+                        </div>
                     </td>
-                    <td style="padding: 10px;" id="sum-${item.productId}">${itemSum} руб.</td>
-                    <td style="padding: 10px;">
-                        <button onclick="handleRemoveItem('${item.productId}')" style="padding: 5px 10px; background: #dc3545; color: white; border: none; cursor: pointer;">Удалить</button>
+                    <td class="cart-item-price" id="sum-${item.productId}">${itemSum} ₽</td>
+                    <td>
+                        <button class="cart-remove-btn" onclick="handleRemoveItem('${item.productId}')">Удалить</button>
                     </td>
                 </tr>
             `;
         });
         
-        cartHtml += '</table>';
-        cartHtml += `<div style="margin-top: 15px; font-size: 1.2em;"><strong>Итого: <span id="cart-total">${totalPrice}</span> руб.</strong></div>`;
-        cartHtml += `<br><button id="checkout-btn" style="padding: 10px 20px; background: #4caf50; color: white; border: none; cursor: pointer;">Оформить доставку</button>`;
+        cartHtml += '</tbody></table>';
+        cartHtml += '<div class="cart-total"><div class="cart-total-label">Итого к оплате</div><div class="cart-total-amount" id="cart-total">' + totalPrice + ' ₽</div></div>';
+        cartHtml += '<button id="checkout-btn" class="checkout-btn">Оформить доставку</button></div>';
         
         cartContent.innerHTML = cartHtml;
         document.getElementById('checkout-btn')?.addEventListener('click', renderDelivery);
@@ -649,50 +669,51 @@ const renderDelivery = (): void => {
     appContainer.innerHTML = `
         <h2>Оформление доставки</h2>
         <form id="delivery-form" data-delivery="true">
-            <div style="margin-bottom: 10px;">
-                <label for="address">Адрес доставки:</label><br>
-                <input type="text" id="address" name="address" required style="padding: 8px; width: 300px;">
+            <div class="form-group">
+                <label for="address">Адрес доставки</label>
+                <input type="text" id="address" name="address" required placeholder="Улица, дом, квартира">
             </div>
-            <div style="margin-bottom: 10px;">
-                <label for="delivery-phone">Контактный телефон:</label><br>
-                <input type="tel" id="delivery-phone" name="phone" required style="padding: 8px; width: 300px;">
+            <div class="form-group">
+                <label for="delivery-phone">Контактный телефон</label>
+                <input type="tel" id="delivery-phone" name="phone" required placeholder="+7 (999) 123-45-67">
             </div>
-            <div style="margin-bottom: 10px;">
-                <label for="delivery-email">Электронная почта:</label><br>
-                <input type="email" id="delivery-email" name="email" required style="padding: 8px; width: 300px;">
+            <div class="form-group">
+                <label for="delivery-email">Электронная почта</label>
+                <input type="email" id="delivery-email" name="email" required placeholder="email@example.com">
             </div>
-            <div style="margin-bottom: 10px;">
-                <label for="delivery-date">Дата доставки:</label><br>
-                <input type="date" id="delivery-date" name="date" required style="padding: 8px;">
+            <div class="form-group">
+                <label for="delivery-date">Дата доставки</label>
+                <input type="date" id="delivery-date" name="date" required>
             </div>
             
-            <h3>Способ оплаты</h3>
-            <div style="margin-bottom: 10px;">
-                <input type="radio" id="payment-card" name="payment" value="card" checked>
-                <label for="payment-card">Оплата картой онлайн</label>
-            </div>
-            <div style="margin-bottom: 10px;">
-                <input type="radio" id="payment-cash" name="payment" value="cash">
-                <label for="payment-cash">Наличными при получении</label>
-            </div>
-            <div style="margin-bottom: 10px;">
-                <input type="radio" id="payment-transfer" name="payment" value="transfer">
-                <label for="payment-transfer">Перевод на карту</label>
+            <h3 style="margin-top: 25px; margin-bottom: 15px;">Способ оплаты</h3>
+            <div class="form-group" style="display: flex; gap: 20px; flex-wrap: wrap;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="radio" id="payment-card" name="payment" value="card" checked style="width: auto;">
+                    <span>Оплата картой онлайн</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="radio" id="payment-cash" name="payment" value="cash" style="width: auto;">
+                    <span>Наличными при получении</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+                    <input type="radio" id="payment-transfer" name="payment" value="transfer" style="width: auto;">
+                    <span>Перевод на карту</span>
+                </label>
             </div>
 
-            <h3>Подтверждение</h3>
-            <div style="margin-bottom: 10px; background: #f0f0f0; padding: 10px; display: inline-block; border-radius: 5px;">
-                <label for="captcha">Решите пример: ${captchaQuestion} = </label>
-                <input type="number" id="captcha" name="captcha" required style="padding: 5px; width: 60px;">
+            <h3 style="margin-top: 25px; margin-bottom: 15px;">Подтверждение</h3>
+            <div class="form-group" style="background: var(--bg-light); padding: 15px; border-radius: 8px; display: inline-block;">
+                <label for="captcha" style="margin-bottom: 0;">Решите пример: ${captchaQuestion} = </label>
+                <input type="number" id="captcha" name="captcha" required style="width: 80px; display: inline-block; margin-left: 10px; padding: 8px;">
                 <input type="hidden" id="captcha-answer" value="${captchaAnswer}">
             </div>
 
-            <br><br>
-            <button type="submit" id="submit-order" style="padding: 12px 24px; background: #28a745; color: white; border: none; cursor: pointer; font-size: 16px;">
+            <button type="submit" id="submit-order" class="checkout-btn" style="margin-top: 25px;">
                 Оформить заказ
             </button>
         </form>
-        <div id="delivery-message" style="margin-top: 15px; font-weight: bold;"></div>
+        <div id="delivery-message" style="margin-top: 20px; text-align: center;"></div>
     `;
 
     const dateInput = document.getElementById('delivery-date') as HTMLInputElement;
@@ -792,9 +813,9 @@ const renderProfile = async (): Promise<void> => {
     appContainer.innerHTML = `
         <h2>Личный кабинет</h2>
         <div id="profile-content">
-            <div class="profile-card">
-                <div class="profile-info" id="profile-info">Загрузка...</div>
-                <button id="logout-btn" class="logout-btn">Выйти из аккаунта</button>
+            <div class="cart-container" style="max-width: 600px;">
+                <div class="profile-info" id="profile-info" style="margin-bottom: 25px;">Загрузка...</div>
+                <button id="logout-btn" class="cart-remove-btn" style="width: 100%; text-align: center;">Выйти из аккаунта</button>
             </div>
         </div>
     `;
@@ -808,17 +829,17 @@ const renderProfile = async (): Promise<void> => {
             const user = await response.json();
             if (profileInfo) {
                 profileInfo.innerHTML = `
-                    <div class="profile-field">
-                        <span class="profile-label">Имя пользователя:</span>
-                        <span class="profile-value">${user.username}</span>
+                    <div class="order-detail" style="padding: 15px 0; border-bottom: 1px solid var(--bg-light);">
+                        <span class="order-detail-label">Имя пользователя</span>
+                        <span class="order-detail-value">${user.username}</span>
                     </div>
-                    <div class="profile-field">
-                        <span class="profile-label">Email:</span>
-                        <span class="profile-value">${user.email || 'Не указан'}</span>
+                    <div class="order-detail" style="padding: 15px 0; border-bottom: 1px solid var(--bg-light);">
+                        <span class="order-detail-label">Email</span>
+                        <span class="order-detail-value">${user.email || 'Не указан'}</span>
                     </div>
-                    <div class="profile-field">
-                        <span class="profile-label">Телефон:</span>
-                        <span class="profile-value">${user.phone || 'Не указан'}</span>
+                    <div class="order-detail" style="padding: 15px 0;">
+                        <span class="order-detail-label">Телефон</span>
+                        <span class="order-detail-value">${user.phone || 'Не указан'}</span>
                     </div>
                 `;
             }
