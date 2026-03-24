@@ -8,7 +8,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var _a, _b, _c;
+var _a, _b, _c, _d, _e, _f;
 const appContainer = document.getElementById('app');
 // Отрисовка главной страницы 
 const renderHome = () => __awaiter(void 0, void 0, void 0, function* () {
@@ -87,6 +87,121 @@ const renderRegister = () => {
     const form = document.getElementById('register-form');
     form.addEventListener('submit', handleRegister);
 };
+// Отрисовка страницы входа
+const renderLogin = () => __awaiter(void 0, void 0, void 0, function* () {
+    if (!appContainer)
+        return;
+    appContainer.innerHTML = `
+        <h2>Вход в аккаунт</h2>
+        <form id="login-form" data-login="true">
+            <div style="margin-bottom: 10px;">
+                <label for="login-username">Имя пользователя:</label><br>
+                <input type="text" id="login-username" name="username" required>
+            </div>
+            <div style="margin-bottom: 10px;">
+                <label for="login-password">Пароль:</label><br>
+                <input type="password" id="login-password" name="password" required>
+            </div>
+            <button type="submit">Войти</button>
+        </form>
+        <div id="login-message" style="margin-top: 15px; font-weight: bold;"></div>
+    `;
+    const form = document.getElementById('login-form');
+    form.addEventListener('submit', handleLogin);
+});
+const handleLogin = (event) => __awaiter(void 0, void 0, void 0, function* () {
+    event.preventDefault();
+    const form = event.target;
+    const messageBox = document.getElementById('login-message');
+    if (!messageBox)
+        return;
+    const usernameInput = form.elements.namedItem('username');
+    const passwordInput = form.elements.namedItem('password');
+    const data = {
+        username: usernameInput.value,
+        password: passwordInput.value
+    };
+    try {
+        const response = yield fetch('/api/users/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        const result = yield response.json();
+        if (response.ok) {
+            messageBox.style.color = 'green';
+            messageBox.textContent = 'Успешный вход!';
+            showUserInfo(result.user.username);
+            setTimeout(renderHome, 1000);
+        }
+        else {
+            messageBox.style.color = 'red';
+            messageBox.textContent = 'Ошибка: ' + result.message;
+        }
+    }
+    catch (error) {
+        console.error('Network error:', error);
+        messageBox.style.color = 'red';
+        messageBox.textContent = 'Ошибка соединения с сервером.';
+    }
+});
+// Отрисовка страницы заказов
+const renderOrders = () => __awaiter(void 0, void 0, void 0, function* () {
+    if (!appContainer)
+        return;
+    appContainer.innerHTML = '<h2>Мои заказы</h2><div id="orders-content">Загрузка...</div>';
+    const ordersContent = document.getElementById('orders-content');
+    if (!ordersContent)
+        return;
+    try {
+        const response = yield fetch('/api/delivery');
+        if (response.status === 401) {
+            ordersContent.innerHTML = '<p style="color: red;">Нужно авторизоваться для просмотра заказов.</p>';
+            return;
+        }
+        const orders = yield response.json();
+        if (orders.length === 0) {
+            ordersContent.innerHTML = '<p>У вас пока нет заказов.</p>';
+            return;
+        }
+        const productsResponse = yield fetch('/api/products');
+        const products = yield productsResponse.json();
+        const productsMap = new Map(products.map(p => [p.id, p]));
+        let ordersHtml = '<div style="display: flex; flex-direction: column; gap: 20px;">';
+        for (const order of orders) {
+            ordersHtml += `
+                <div style="border: 1px solid #ddd; padding: 15px; border-radius: 8px; background: #f9f9f9;">
+                    <h3 style="margin-top: 0;">Заказ #${order.id}</h3>
+                    <p><strong>Статус:</strong> <span style="color: ${order.status === 'completed' ? 'green' : order.status === 'cancelled' ? 'red' : 'orange'}">${getStatusName(order.status)}</span></p>
+                    <p><strong>Адрес доставки:</strong> ${order.address}</p>
+                    <p><strong>Дата доставки:</strong> ${formatDate(order.date)}</p>
+                    <p><strong>Сумма:</strong> ${order.totalPrice} руб.</p>
+                    <h4>Товары:</h4>
+                    <ul>
+            `;
+            for (const item of order.items) {
+                const product = productsMap.get(item.productId);
+                const title = product ? product.title : `Товар #${item.productId}`;
+                ordersHtml += `<li>${title} - ${item.quantity} шт.</li>`;
+            }
+            ordersHtml += '</ul></div>';
+        }
+        ordersHtml += '</div>';
+        ordersContent.innerHTML = ordersHtml;
+    }
+    catch (error) {
+        console.error('Ошибка загрузки заказов:', error);
+        ordersContent.innerHTML = '<p style="color: red;">Не удалось загрузить заказы.</p>';
+    }
+});
+function getStatusName(status) {
+    switch (status) {
+        case 'pending': return 'Ожидает';
+        case 'completed': return 'Выполнен';
+        case 'cancelled': return 'Отменён';
+        default: return status;
+    }
+}
 //  Логика отправки данных 
 const handleRegister = (event) => __awaiter(void 0, void 0, void 0, function* () {
     event.preventDefault();
@@ -447,6 +562,60 @@ function formatDate(dateStr) {
     return date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
 }
 (_a = document.getElementById('nav-home')) === null || _a === void 0 ? void 0 : _a.addEventListener('click', renderHome);
-(_b = document.getElementById('nav-register')) === null || _b === void 0 ? void 0 : _b.addEventListener('click', renderRegister);
-(_c = document.getElementById('nav-cart')) === null || _c === void 0 ? void 0 : _c.addEventListener('click', renderCart);
-window.addEventListener('DOMContentLoaded', renderHome);
+(_b = document.getElementById('nav-login')) === null || _b === void 0 ? void 0 : _b.addEventListener('click', renderLogin);
+(_c = document.getElementById('nav-register')) === null || _c === void 0 ? void 0 : _c.addEventListener('click', renderRegister);
+(_d = document.getElementById('nav-cart')) === null || _d === void 0 ? void 0 : _d.addEventListener('click', renderCart);
+(_e = document.getElementById('nav-orders')) === null || _e === void 0 ? void 0 : _e.addEventListener('click', renderOrders);
+// Проверка авторизации при загрузке
+const checkAuth = () => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const response = yield fetch('/api/users/me');
+        if (response.ok) {
+            const user = yield response.json();
+            showUserInfo(user.username);
+        }
+    }
+    catch (error) {
+        console.error('Ошибка проверки авторизации:', error);
+    }
+});
+const showUserInfo = (username) => {
+    const userInfo = document.getElementById('user-info');
+    const usernameDisplay = document.getElementById('username-display');
+    const navLogin = document.getElementById('nav-login');
+    const navRegister = document.getElementById('nav-register');
+    if (userInfo && usernameDisplay) {
+        userInfo.style.display = 'flex';
+        usernameDisplay.textContent = username;
+    }
+    if (navLogin)
+        navLogin.style.display = 'none';
+    if (navRegister)
+        navRegister.style.display = 'none';
+};
+const hideUserInfo = () => {
+    const userInfo = document.getElementById('user-info');
+    const navLogin = document.getElementById('nav-login');
+    const navRegister = document.getElementById('nav-register');
+    if (userInfo)
+        userInfo.style.display = 'none';
+    if (navLogin)
+        navLogin.style.display = 'inline-block';
+    if (navRegister)
+        navRegister.style.display = 'inline-block';
+};
+// Обработчик выхода
+(_f = document.getElementById('nav-logout')) === null || _f === void 0 ? void 0 : _f.addEventListener('click', () => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        yield fetch('/api/users/logout', { method: 'POST' });
+        hideUserInfo();
+        renderHome();
+    }
+    catch (error) {
+        console.error('Ошибка выхода:', error);
+    }
+}));
+window.addEventListener('DOMContentLoaded', () => {
+    renderHome();
+    checkAuth();
+});

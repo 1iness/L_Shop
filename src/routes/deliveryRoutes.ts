@@ -4,7 +4,7 @@ import { requireAuth } from '../middleware/authMiddleware.js';
 
 const router = Router();
 
-router.post('/order', requireAuth, createDeliveryOrder);
+router.post('/order', createDeliveryOrder);
 router.get('/', requireAuth, getOrders);
 router.get('/:id', requireAuth, getOrderById);
 
