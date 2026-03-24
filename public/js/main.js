@@ -8,7 +8,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-var _a, _b, _c, _d, _e, _f;
+var _a, _b, _c, _d, _e;
 const appContainer = document.getElementById('app');
 let allProducts = [];
 let currentFilters = {
@@ -201,66 +201,72 @@ const applyFiltersAndRender = () => {
         productsList.appendChild(card);
     });
 };
-//  Отрисовка страницы регистрации 
-const renderRegister = () => {
+//  Отрисовка страницы авторизации (вход/регистрация)
+const renderAuth = (mode = 'login') => {
     if (!appContainer)
         return;
+    
+    const isLogin = mode === 'login';
+    
     appContainer.innerHTML = `
-        <h2>Регистрация</h2>
-        <form id="register-form" data-registration="true">
-            <div style="margin-bottom: 10px;">
+        <h2>${isLogin ? 'Вход в аккаунт' : 'Регистрация'}</h2>
+        <form id="auth-form">
+            <div id="register-fields" style="margin-bottom: 10px; ${isLogin ? 'display: none;' : ''}">
                 <label for="username">Имя пользователя (Логин):</label><br>
-                <input type="text" id="username" name="username" required>
+                <input type="text" id="username" name="username" ${isLogin ? '' : 'required'}>
             </div>
-            <div style="margin-bottom: 10px;">
+            <div id="email-field" style="margin-bottom: 10px; ${isLogin ? 'display: none;' : ''}">
                 <label for="email">Email:</label><br>
-                <input type="email" id="email" name="email" required>
+                <input type="email" id="email" name="email" ${isLogin ? '' : 'required'}>
             </div>
-            <div style="margin-bottom: 10px;">
+            <div id="phone-field" style="margin-bottom: 10px; ${isLogin ? 'display: none;' : ''}">
                 <label for="phone">Телефон:</label><br>
-                <input type="tel" id="phone" name="phone" required>
+                <input type="tel" id="phone" name="phone" ${isLogin ? '' : 'required'}>
             </div>
             <div style="margin-bottom: 10px;">
-                <label for="password">Пароль:</label><br>
-                <input type="password" id="password" name="password" required>
+                <label for="auth-username">Имя пользователя:</label><br>
+                <input type="text" id="auth-username" name="authUsername" required>
             </div>
-            <button type="submit">Зарегистрироваться</button>
+            <div style="margin-bottom: 10px;">
+                <label for="auth-password">Пароль:</label><br>
+                <input type="password" id="auth-password" name="authPassword" required>
+            </div>
+            <button type="submit" id="auth-submit">${isLogin ? 'Войти' : 'Зарегистрироваться'}</button>
         </form>
-        <div id="form-message" style="margin-top: 15px; font-weight: bold;"></div>
+        <p style="margin-top: 15px;">
+            ${isLogin ? 'Нет аккаунта?' : 'Уже есть аккаунт?'} 
+            <a href="#" id="auth-switch" style="color: #007bff; cursor: pointer;">${isLogin ? 'Зарегистрироваться' : 'Войти'}</a>
+        </p>
+        <div id="auth-message" style="margin-top: 15px; font-weight: bold;"></div>
     `;
-    const form = document.getElementById('register-form');
-    form.addEventListener('submit', handleRegister);
+    
+    const form = document.getElementById('auth-form');
+    const switchLink = document.getElementById('auth-switch');
+    
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        if (isLogin) {
+            handleLoginAuth(e);
+        } else {
+            handleRegisterAuth(e);
+        }
+    });
+    
+    switchLink.addEventListener('click', (e) => {
+        e.preventDefault();
+        renderAuth(isLogin ? 'register' : 'login');
+    });
 };
-// Отрисовка страницы входа
-const renderLogin = () => __awaiter(void 0, void 0, void 0, function* () {
-    if (!appContainer)
-        return;
-    appContainer.innerHTML = `
-        <h2>Вход в аккаунт</h2>
-        <form id="login-form" data-login="true">
-            <div style="margin-bottom: 10px;">
-                <label for="login-username">Имя пользователя:</label><br>
-                <input type="text" id="login-username" name="username" required>
-            </div>
-            <div style="margin-bottom: 10px;">
-                <label for="login-password">Пароль:</label><br>
-                <input type="password" id="login-password" name="password" required>
-            </div>
-            <button type="submit">Войти</button>
-        </form>
-        <div id="login-message" style="margin-top: 15px; font-weight: bold;"></div>
-    `;
-    const form = document.getElementById('login-form');
-    form.addEventListener('submit', handleLogin);
-});
-const handleLogin = (event) => __awaiter(void 0, void 0, void 0, function* () {
+
+// Обработка входа
+const handleLoginAuth = (event) => __awaiter(void 0, void 0, void 0, function* () {
     event.preventDefault();
     const form = event.target;
-    const messageBox = document.getElementById('login-message');
+    const messageBox = document.getElementById('auth-message');
     if (!messageBox)
         return;
-    const usernameInput = form.elements.namedItem('username');
-    const passwordInput = form.elements.namedItem('password');
+    const usernameInput = form.elements.namedItem('authUsername');
+    const passwordInput = form.elements.namedItem('authPassword');
     const data = {
         username: usernameInput.value,
         password: passwordInput.value
@@ -289,6 +295,53 @@ const handleLogin = (event) => __awaiter(void 0, void 0, void 0, function* () {
         messageBox.textContent = 'Ошибка соединения с сервером.';
     }
 });
+
+// Обработка регистрации
+const handleRegisterAuth = (event) => __awaiter(void 0, void 0, void 0, function* () {
+    event.preventDefault();
+    const form = event.target;
+    const messageBox = document.getElementById('auth-message');
+    if (!messageBox)
+        return;
+    const usernameInput = form.elements.namedItem('authUsername');
+    const emailInput = form.elements.namedItem('email');
+    const phoneInput = form.elements.namedItem('phone');
+    const passwordInput = form.elements.namedItem('authPassword');
+    const data = {
+        username: usernameInput.value,
+        email: emailInput.value,
+        phone: phoneInput.value,
+        password: passwordInput.value
+    };
+    try {
+        const response = yield fetch('/api/users/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+        });
+        const result = yield response.json();
+        if (response.ok) {
+            messageBox.style.color = 'green';
+            messageBox.textContent = 'Успешно: ' + result.message;
+            form.reset();
+            setTimeout(() => renderAuth('login'), 2000);
+        }
+        else {
+            messageBox.style.color = 'red';
+            messageBox.textContent = 'Ошибка: ' + result.message;
+        }
+    }
+    catch (error) {
+        console.error('Network error:', error);
+        messageBox.style.color = 'red';
+        messageBox.textContent = 'Ошибка соединения с сервером.';
+    }
+});
+
+// Оставлены для обратной совместимости
+const renderRegister = () => renderAuth('register');
+const renderLogin = () => renderAuth('login');
+
 // Отрисовка страницы заказов
 const renderOrders = () => __awaiter(void 0, void 0, void 0, function* () {
     if (!appContainer)
@@ -346,47 +399,7 @@ function getStatusName(status) {
         default: return status;
     }
 }
-//  Логика отправки данных 
-const handleRegister = (event) => __awaiter(void 0, void 0, void 0, function* () {
-    event.preventDefault();
-    const form = event.target;
-    const messageBox = document.getElementById('form-message');
-    if (!messageBox)
-        return;
-    const usernameInput = form.elements.namedItem('username');
-    const emailInput = form.elements.namedItem('email');
-    const phoneInput = form.elements.namedItem('phone');
-    const passwordInput = form.elements.namedItem('password');
-    const data = {
-        username: usernameInput.value,
-        email: emailInput.value,
-        phone: phoneInput.value,
-        password: passwordInput.value
-    };
-    try {
-        const response = yield fetch('/api/users/register', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(data)
-        });
-        const result = yield response.json();
-        if (response.ok) {
-            messageBox.style.color = 'green';
-            messageBox.textContent = 'Успешно: ' + result.message;
-            form.reset();
-            setTimeout(renderHome, 2000);
-        }
-        else {
-            messageBox.style.color = 'red';
-            messageBox.textContent = 'Ошибка: ' + result.message;
-        }
-    }
-    catch (error) {
-        console.error('Network error:', error);
-        messageBox.style.color = 'red';
-        messageBox.textContent = 'Ошибка соединения с сервером.';
-    }
-});
+
 const addToCartHandler = (productId) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const response = yield fetch('/api/cart/add', {
@@ -396,7 +409,7 @@ const addToCartHandler = (productId) => __awaiter(void 0, void 0, void 0, functi
         });
         if (response.status === 401) {
             alert('Сначала нужно войти в аккаунт!');
-            renderRegister();
+            renderAuth('login');
             return;
         }
         if (response.ok) {
@@ -763,11 +776,10 @@ const renderProfile = () => __awaiter(void 0, void 0, void 0, function* () {
     }));
 });
 (_a = document.getElementById('nav-home')) === null || _a === void 0 ? void 0 : _a.addEventListener('click', renderHome);
-(_b = document.getElementById('nav-login')) === null || _b === void 0 ? void 0 : _b.addEventListener('click', renderLogin);
-(_c = document.getElementById('nav-register')) === null || _c === void 0 ? void 0 : _c.addEventListener('click', renderRegister);
-(_d = document.getElementById('nav-cart')) === null || _d === void 0 ? void 0 : _d.addEventListener('click', renderCart);
-(_e = document.getElementById('nav-orders')) === null || _e === void 0 ? void 0 : _e.addEventListener('click', renderOrders);
-(_f = document.getElementById('nav-profile')) === null || _f === void 0 ? void 0 : _f.addEventListener('click', renderProfile);
+(_b = document.getElementById('nav-auth')) === null || _b === void 0 ? void 0 : _b.addEventListener('click', () => renderAuth('login'));
+(_c = document.getElementById('nav-cart')) === null || _c === void 0 ? void 0 : _c.addEventListener('click', renderCart);
+(_d = document.getElementById('nav-orders')) === null || _d === void 0 ? void 0 : _d.addEventListener('click', renderOrders);
+(_e = document.getElementById('nav-profile')) === null || _e === void 0 ? void 0 : _e.addEventListener('click', renderProfile);
 // Проверка авторизации при загрузке
 const checkAuth = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
@@ -782,26 +794,20 @@ const checkAuth = () => __awaiter(void 0, void 0, void 0, function* () {
     }
 });
 const showUserInfo = (username) => {
-    const navLogin = document.getElementById('nav-login');
-    const navRegister = document.getElementById('nav-register');
+    const navAuth = document.getElementById('nav-auth');
     const navProfile = document.getElementById('nav-profile');
     if (navProfile)
         navProfile.style.display = 'inline-block';
-    if (navLogin)
-        navLogin.style.display = 'none';
-    if (navRegister)
-        navRegister.style.display = 'none';
+    if (navAuth)
+        navAuth.style.display = 'none';
 };
 const hideUserInfo = () => {
-    const navLogin = document.getElementById('nav-login');
-    const navRegister = document.getElementById('nav-register');
+    const navAuth = document.getElementById('nav-auth');
     const navProfile = document.getElementById('nav-profile');
     if (navProfile)
         navProfile.style.display = 'none';
-    if (navLogin)
-        navLogin.style.display = 'inline-block';
-    if (navRegister)
-        navRegister.style.display = 'inline-block';
+    if (navAuth)
+        navAuth.style.display = 'inline-block';
 };
 window.addEventListener('DOMContentLoaded', () => {
     renderHome();
