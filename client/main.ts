@@ -265,10 +265,13 @@ const renderRegister = (): void => {
             <button type="submit">Зарегистрироваться</button>
         </form>
         <div id="form-message" style="margin-top: 15px; font-weight: bold;"></div>
+        <div style="margin-top: 20px; text-align: center;">Уже есть аккаунт? <button id="go-to-login" style="background: none; border: none; color: blue; cursor: pointer; text-decoration: underline; padding: 0;">Войти</button></div>
     `;
 
     const form = document.getElementById('register-form') as HTMLFormElement;
     form.addEventListener('submit', handleRegister);
+    const loginBtn = document.getElementById('go-to-login');
+    loginBtn?.addEventListener('click', renderLogin);
 };
 
 // Отрисовка страницы входа
@@ -289,10 +292,13 @@ const renderLogin = async (): Promise<void> => {
             <button type="submit">Войти</button>
         </form>
         <div id="login-message" style="margin-top: 15px; font-weight: bold;"></div>
+        <div style="margin-top: 20px; text-align: center;">Нет аккаунта? <button id="go-to-register" style="background: none; border: none; color: blue; cursor: pointer; text-decoration: underline; padding: 0;">Зарегистрироваться</button></div>
     `;
     
     const form = document.getElementById('login-form') as HTMLFormElement;
     form.addEventListener('submit', handleLogin);
+    const registerBtn = document.getElementById('go-to-register');
+    registerBtn?.addEventListener('click', renderRegister);
 };
 
 const handleLogin = async (event: Event): Promise<void> => {
@@ -863,8 +869,7 @@ const renderProfile = async (): Promise<void> => {
 };
 
 document.getElementById('nav-home')?.addEventListener('click', renderHome);
-document.getElementById('nav-login')?.addEventListener('click', renderLogin);
-document.getElementById('nav-register')?.addEventListener('click', renderRegister);
+document.getElementById('nav-auth')?.addEventListener('click', renderLogin);
 document.getElementById('nav-cart')?.addEventListener('click', renderCart);
 document.getElementById('nav-orders')?.addEventListener('click', renderOrders);
 document.getElementById('nav-profile')?.addEventListener('click', renderProfile);
@@ -883,23 +888,19 @@ const checkAuth = async (): Promise<void> => {
 };
 
 const showUserInfo = (username: string): void => {
-    const navLogin = document.getElementById('nav-login');
-    const navRegister = document.getElementById('nav-register');
+    const navAuth = document.getElementById('nav-auth');
     const navProfile = document.getElementById('nav-profile');
     
     if (navProfile) navProfile.style.display = 'inline-block';
-    if (navLogin) navLogin.style.display = 'none';
-    if (navRegister) navRegister.style.display = 'none';
+    if (navAuth) navAuth.style.display = 'none';
 };
 
 const hideUserInfo = (): void => {
-    const navLogin = document.getElementById('nav-login');
-    const navRegister = document.getElementById('nav-register');
+    const navAuth = document.getElementById('nav-auth');
     const navProfile = document.getElementById('nav-profile');
     
     if (navProfile) navProfile.style.display = 'none';
-    if (navLogin) navLogin.style.display = 'inline-block';
-    if (navRegister) navRegister.style.display = 'inline-block';
+    if (navAuth) navAuth.style.display = 'inline-block';
 };
 
 window.addEventListener('DOMContentLoaded', () => {
