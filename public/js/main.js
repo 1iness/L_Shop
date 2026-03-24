@@ -826,4 +826,28 @@ const hideUserInfo = () => {
 window.addEventListener('DOMContentLoaded', () => {
     renderHome();
     checkAuth();
+    // Анимация пара при скролле
+    const steamContainer = document.querySelector('.steam-container');
+    const steamElements = document.querySelectorAll('.steam');
+    let scrollTimeout;
+    const handleScroll = () => {
+        if (steamContainer) {
+            steamContainer.classList.add('scrolling');
+        }
+        steamElements.forEach(steam => {
+            steam.classList.add('scroll-active');
+        });
+        // Очищаем предыдущий таймер
+        clearTimeout(scrollTimeout);
+        // Убираем класс 'scrolling' после окончания скролла
+        scrollTimeout = setTimeout(() => {
+            if (steamContainer) {
+                steamContainer.classList.remove('scrolling');
+            }
+            steamElements.forEach(steam => {
+                steam.classList.remove('scroll-active');
+            });
+        }, 300);
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
 });

@@ -64,11 +64,135 @@ body {
     min-height: 100vh;
     line-height: 1.7;
     overflow-x: hidden;
-    background-image: 
-        radial-gradient(ellipse at 30% 20%, rgba(45, 90, 69, 0.04) 0%, transparent 50%),
-        radial-gradient(ellipse at 70% 80%, rgba(166, 124, 82, 0.05) 0%, transparent 50%),
-        url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23dcc9a3' fill-opacity='0.1'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-    background-attachment: fixed;
+    background: var(--bg-cream);
+    position: relative;
+    z-index: 0;
+}
+
+/* Анимация пара */
+.steam-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 1;
+}
+
+.steam-container.scrolling {
+    animation: steam-intense 0.5s ease-in-out infinite;
+}
+
+.steam {
+    position: absolute;
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    filter: blur(30px);
+    opacity: 0.5;
+    animation: steam-rise 12s ease-in-out infinite;
+    transition: opacity 0.3s ease, transform 0.3s ease, filter 0.3s ease;
+}
+
+.steam.scroll-active {
+    opacity: 0.85;
+    filter: blur(40px);
+    transform: scale(1.5);
+}
+
+.steam:nth-child(1) {
+    left: 10%;
+    bottom: -100px;
+    background: linear-gradient(to top, rgba(45, 90, 69, 0.5), rgba(90, 154, 110, 0.2));
+    animation-delay: 0s;
+    animation-duration: 14s;
+}
+
+.steam:nth-child(2) {
+    left: 30%;
+    bottom: -120px;
+    background: linear-gradient(to top, rgba(166, 124, 82, 0.5), rgba(212, 201, 163, 0.2));
+    animation-delay: -4s;
+    animation-duration: 16s;
+}
+
+.steam:nth-child(3) {
+    left: 55%;
+    bottom: -80px;
+    background: linear-gradient(to top, rgba(45, 90, 69, 0.45), rgba(143, 196, 163, 0.2));
+    animation-delay: -8s;
+    animation-duration: 13s;
+}
+
+.steam:nth-child(4) {
+    left: 75%;
+    bottom: -100px;
+    background: linear-gradient(to top, rgba(166, 124, 82, 0.45), rgba(220, 201, 163, 0.2));
+    animation-delay: -2s;
+    animation-duration: 15s;
+}
+
+.steam:nth-child(5) {
+    left: 90%;
+    bottom: -60px;
+    background: linear-gradient(to top, rgba(45, 90, 69, 0.4), rgba(90, 154, 110, 0.15));
+    animation-delay: -6s;
+    animation-duration: 17s;
+}
+
+@keyframes steam-rise {
+    0% {
+        transform: translateY(0) scale(1);
+        opacity: 0;
+    }
+    10% {
+        opacity: 0.4;
+    }
+    50% {
+        transform: translateY(-200px) scale(2);
+        opacity: 0.3;
+    }
+    90% {
+        opacity: 0.1;
+    }
+    100% {
+        transform: translateY(-400px) scale(3);
+        opacity: 0;
+    }
+}
+
+@keyframes steam-intense {
+    0% {
+        transform: translateY(0) scale(1) rotate(0deg);
+        opacity: 0.5;
+    }
+    50% {
+        transform: translateY(-250px) scale(1.5) rotate(5deg);
+        opacity: 0.8;
+    }
+    100% {
+        transform: translateY(-500px) scale(2) rotate(10deg);
+        opacity: 0.5;
+    }
+}
+
+/* Мягкий фон */
+body::before {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: 
+        radial-gradient(ellipse at 20% 15%, rgba(45, 90, 69, 0.12) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 85%, rgba(166, 124, 82, 0.12) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 100%, rgba(45, 90, 69, 0.08) 0%, transparent 40%),
+        radial-gradient(ellipse at 0% 50%, rgba(166, 124, 82, 0.08) 0%, transparent 35%);
+    pointer-events: none;
+    z-index: 0;
 }
 
 ::-webkit-scrollbar {
@@ -98,6 +222,28 @@ header {
     backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--brown-cream);
     box-shadow: var(--shadow-soft);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.logo-icon {
+    font-size: 36px;
+    line-height: 1;
+}
+
+.logo-text {
+    font-family: 'Playfair Display', serif;
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--green-deep);
+    letter-spacing: 1px;
 }
 
 .logo {
@@ -133,7 +279,7 @@ nav {
     display: flex;
     gap: 15px;
     flex-wrap: wrap;
-    justify-content: center;
+    justify-content: flex-end;
     padding: 10px 0;
 }
 
@@ -996,6 +1142,20 @@ form button[type="submit"]:active {
 @media (max-width: 768px) {
     header {
         padding: 20px;
+        flex-direction: column;
+        gap: 15px;
+    }
+    
+    .logo-container {
+        justify-content: center;
+    }
+    
+    .logo-icon {
+        font-size: 30px;
+    }
+    
+    .logo-text {
+        font-size: 24px;
     }
     
     .logo {
@@ -1009,6 +1169,7 @@ form button[type="submit"]:active {
     
     nav {
         gap: 10px;
+        justify-content: center;
     }
     
     nav button {
