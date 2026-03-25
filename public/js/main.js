@@ -318,7 +318,11 @@ const renderOrders = () => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const response = yield fetch('/api/delivery');
         if (response.status === 401) {
-            ordersContent.innerHTML = '<p style="color: red;">Нужно авторизоваться для просмотра заказов.</p>';
+            ordersContent.innerHTML = `
+                <div class="auth-required-message">
+                    <p>Для просмотра заказов необходимо авторизоваться</p>
+                </div>
+            `;
             return;
         }
         const orders = yield response.json();
@@ -453,7 +457,11 @@ const renderCart = () => __awaiter(void 0, void 0, void 0, function* () {
             fetch('/api/products')
         ]);
         if (cartResponse.status === 401) {
-            cartContent.innerHTML = '<p style="color: red;">Нужно авторизоваться, чтобы увидеть корзину.</p>';
+            cartContent.innerHTML = `
+                <div class="auth-required-message">
+                    <p>Чтобы увидеть корзину, необходимо авторизоваться</p>
+                </div>
+            `;
             return;
         }
         const data = yield cartResponse.json();

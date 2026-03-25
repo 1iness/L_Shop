@@ -360,7 +360,11 @@ const renderOrders = async (): Promise<void> => {
         const response = await fetch('/api/delivery');
         
         if (response.status === 401) {
-            ordersContent.innerHTML = '<p style="color: red;">Нужно авторизоваться для просмотра заказов.</p>';
+            ordersContent.innerHTML = `
+                <div class="auth-required-message">
+                    <p>Для просмотра заказов необходимо авторизоваться</p>
+                </div>
+            `;
             return;
         }
 
@@ -512,7 +516,11 @@ const renderCart = async (): Promise<void> => {
         ]);
         
         if (cartResponse.status === 401) {
-            cartContent.innerHTML = '<p style="color: red;">Нужно авторизоваться, чтобы увидеть корзину.</p>';
+            cartContent.innerHTML = `
+                <div class="auth-required-message">
+                    <p>Чтобы увидеть корзину, необходимо авторизоваться</p>
+                </div>
+            `;
             return;
         }
 

@@ -1,7 +1,12 @@
 [
   {
     "username": "русик",
-    "items": []
+    "items": [
+      {
+        "productId": "2",
+        "quantity": 1
+      }
+    ]
   },
   {
     "username": "веруцкпр",
