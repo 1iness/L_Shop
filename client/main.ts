@@ -219,7 +219,7 @@ const applyFiltersAndRender = (): void => {
                 <h3>${product.title}</h3>
                 <p class="product-description">${product.description}</p>
                 <div class="product-meta">
-                    <span class="product-price">${product.price}</span>
+                    <span class="product-price">${product.price} <i class="nbrb-icon">BYN</i></span>
                     <span class="product-category">${product.category}</span>
                 </div>
                 <p class="product-availability ${product.isAvailable ? 'available' : 'unavailable'}">
@@ -395,7 +395,7 @@ const renderOrders = async (): Promise<void> => {
                         </div>
                         <div class="order-detail">
                             <span class="order-detail-label">Сумма заказа</span>
-                            <span class="order-detail-value">${order.totalPrice} Br</span>
+                            <span class="order-detail-value">${order.totalPrice} <i class="nbrb-icon">BYN</i></span>
                         </div>
                     </div>
                     <div class="order-items">
@@ -542,7 +542,7 @@ const renderCart = async (): Promise<void> => {
             cartHtml += `
                 <tr id="cart-item-${item.productId}">
                     <td class="cart-item-title">${title}</td>
-                    <td class="cart-item-price">${price} Br</td>
+                    <td class="cart-item-price">${price} <i class="nbrb-icon">BYN</i></td>
                     <td>
                         <div class="cart-quantity">
                             <button class="cart-quantity-btn" onclick="handleQuantityChange('${item.productId}', 'decrease')">−</button>
@@ -550,7 +550,7 @@ const renderCart = async (): Promise<void> => {
                             <button class="cart-quantity-btn" onclick="handleQuantityChange('${item.productId}', 'increase')">+</button>
                         </div>
                     </td>
-                    <td class="cart-item-price" id="sum-${item.productId}">${itemSum} Br</td>
+                    <td class="cart-item-price" id="sum-${item.productId}">${itemSum} <i class="nbrb-icon">BYN</i></td>
                     <td>
                         <button class="cart-remove-btn" onclick="handleRemoveItem('${item.productId}')">Удалить</button>
                     </td>
@@ -559,7 +559,7 @@ const renderCart = async (): Promise<void> => {
         });
         
         cartHtml += '</tbody></table>';
-        cartHtml += '<div class="cart-total"><div class="cart-total-label">Итого к оплате</div><div class="cart-total-amount" id="cart-total">' + totalPrice + ' Br</div></div>';
+        cartHtml += '<div class="cart-total"><div class="cart-total-label">Итого к оплате</div><div class="cart-total-amount" id="cart-total">' + totalPrice + ' <i class="nbrb-icon">BYN</i></div></div>';
         cartHtml += '<button id="checkout-btn" class="checkout-btn">Оформить доставку</button></div>';
         
         cartContent.innerHTML = cartHtml;
@@ -597,7 +597,7 @@ window.handleQuantityChange = async (productId: string, action: 'increase' | 'de
                 const price = product ? product.price : 0;
                 
                 if (qtySpan) qtySpan.textContent = item.quantity.toString();
-                if (sumSpan) sumSpan.textContent = `${price * item.quantity} руб.`;
+                if (sumSpan) sumSpan.innerHTML = `${price * item.quantity} <i class="nbrb-icon">BYN</i>`;
             } else {
                 const row = document.getElementById(`cart-item-${productId}`);
                 if (row) row.remove();
@@ -616,7 +616,7 @@ window.handleQuantityChange = async (productId: string, action: 'increase' | 'de
                 const id = (row as HTMLElement).id.replace('cart-item-', '');
                 const sumEl = document.getElementById(`sum-${id}`);
                 if (sumEl) {
-                    const sumText = sumEl.textContent?.replace(' руб.', '') || '0';
+                    const sumText = sumEl.textContent?.match(/\d+/)?.[0] || '0';
                     total += parseInt(sumText);
                 }
             });
@@ -654,7 +654,7 @@ window.handleRemoveItem = async (productId: string): Promise<void> => {
                 const id = (r as HTMLElement).id.replace('cart-item-', '');
                 const sumEl = document.getElementById(`sum-${id}`);
                 if (sumEl) {
-                    const sumText = sumEl.textContent?.replace(' руб.', '') || '0';
+                    const sumText = sumEl.textContent?.match(/\d+/)?.[0] || '0';
                     total += parseInt(sumText);
                 }
             });
@@ -784,7 +784,7 @@ const handleDeliverySubmit = async (event: Event): Promise<void> => {
             messageBox.style.color = 'green';
             messageBox.innerHTML = `Заказ #${result.order.id} успешно оформлен!<br>
                 Способ оплаты: ${getPaymentName(payment)}<br>
-                Сумма: ${result.order.totalPrice} руб.<br>
+                Сумма: ${result.order.totalPrice} <i class="nbrb-icon">BYN</i><br>
                 Дата доставки: ${formatDate(result.order.date)}<br>
                 <em>Корзина очищена.</em>`;
             
