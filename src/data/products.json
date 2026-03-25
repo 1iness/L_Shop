@@ -30,5 +30,13 @@
     "price": 12,
     "category": "текстиль",
     "isAvailable": false
+  },
+  {
+    "id": "5",
+    "title": "Камни",
+    "description": "Вполне чистые",
+    "price": 200,
+    "category": "веники",
+    "isAvailable": true
   }
 ]

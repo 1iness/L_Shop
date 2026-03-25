@@ -58,8 +58,14 @@ export const createProduct = async (req: Request, res: Response): Promise<void> 
 
         const products = await readData<Product>('products.json');
         
+        const maxId = products.reduce((max, p) => {
+            const numId = parseInt(p.id);
+            return numId > max ? numId : max;
+        }, 0);
+        const newId = String(maxId + 1);
+        
         const newProduct: Product = {
-            id: String(Date.now()),
+            id: newId,
             title,
             description,
             price: Number(price),
