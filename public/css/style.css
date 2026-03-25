@@ -234,7 +234,7 @@ header {
 }
 
 .logo-icon {
-    font-size: 36px;
+    height: 40px;
     line-height: 1;
 }
 
@@ -419,7 +419,9 @@ nav button:active {
 }
 
 .search-box::before {
-    content: '🔍';
+    content: '\f002';
+    font-family: 'Font Awesome 6 Free';
+    font-weight: 900;
     position: absolute;
     left: 16px;
     top: 50%;
@@ -605,7 +607,7 @@ nav button:active {
 }
 
 .product-price::after {
-    content: ' ₽';
+    content: ' Br';
     font-size: 16px;
     font-weight: 500;
     color: var(--green-sage);
@@ -644,6 +646,20 @@ nav button:active {
     background: linear-gradient(135deg, #f5e6e0, var(--bg-white));
     color: var(--brown-chocolate);
     border: 1px solid var(--brown-tan);
+}
+
+/* Иконки наличия товара */
+.availability-icon {
+    margin-right: 6px;
+    font-size: 14px;
+}
+
+.product-availability.available .availability-icon {
+    color: #22c55e;
+}
+
+.product-availability.unavailable .availability-icon {
+    color: #ef4444;
 }
 
 .add-to-cart-btn {
@@ -1052,6 +1068,20 @@ form button[type="submit"]:active {
     border: 1px solid var(--brown-tan);
 }
 
+/* Иконки наличия товара */
+.availability-icon {
+    margin-right: 6px;
+    font-size: 14px;
+}
+
+.product-availability.available .availability-icon {
+    color: #22c55e;
+}
+
+.product-availability.unavailable .availability-icon {
+    color: #ef4444;
+}
+
 .order-status.completed {
     background: var(--green-pale);
     color: var(--green-rich);
@@ -1062,6 +1092,20 @@ form button[type="submit"]:active {
     background: #f5e6e0;
     color: var(--brown-chocolate);
     border: 1px solid var(--brown-tan);
+}
+
+/* Иконки наличия товара */
+.availability-icon {
+    margin-right: 6px;
+    font-size: 14px;
+}
+
+.product-availability.available .availability-icon {
+    color: #22c55e;
+}
+
+.product-availability.unavailable .availability-icon {
+    color: #ef4444;
 }
 
 .order-details {

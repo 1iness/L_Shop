@@ -15,5 +15,26 @@
     "totalPrice": 16,
     "status": "pending",
     "createdAt": "2026-03-23T17:15:06.849Z"
+  },
+  {
+    "id": "1774427102718",
+    "username": "русик",
+    "address": "Мирная 45, 23",
+    "phone": "+375339004021",
+    "email": "rusik@gmail.com",
+    "date": "2026-03-27",
+    "items": [
+      {
+        "productId": "1",
+        "quantity": 2
+      },
+      {
+        "productId": "2",
+        "quantity": 1
+      }
+    ],
+    "totalPrice": 38,
+    "status": "pending",
+    "createdAt": "2026-03-25T08:25:02.718Z"
   }
 ]

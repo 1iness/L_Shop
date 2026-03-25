@@ -223,7 +223,8 @@ const applyFiltersAndRender = (): void => {
                     <span class="product-category">${product.category}</span>
                 </div>
                 <p class="product-availability ${product.isAvailable ? 'available' : 'unavailable'}">
-                    ${product.isAvailable ? '✓ В наличии' : '✗ Нет в наличии'}
+                    <span class="availability-icon">${product.isAvailable ? '&#10004;' : '&#10008;'}</span>
+                    ${product.isAvailable ? 'В наличии' : 'Нет в наличии'}
                 </p>
                 <button 
                     class="add-to-cart-btn"
@@ -260,12 +261,15 @@ const renderRegister = (): void => {
             </div>
             <div style="margin-bottom: 10px;">
                 <label for="password">Пароль:</label><br>
-                <input type="password" id="password" name="password" required>
+                <div style="position: relative;">
+                    <input type="password" id="password" name="password" required style="width: 100%; padding-right: 40px; box-sizing: border-box;">
+                    <button type="button" class="password-toggle" onclick="togglePasswordVisibility('password', this)" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 5px;"><i class="fas fa-eye"></i></button>
+                </div>
             </div>
             <button type="submit">Зарегистрироваться</button>
         </form>
         <div id="form-message" style="margin-top: 15px; font-weight: bold;"></div>
-        <div style="margin-top: 20px; text-align: center;">Уже есть аккаунт? <button id="go-to-login" style="background: none; border: none; color: blue; cursor: pointer; text-decoration: underline; padding: 0;">Войти</button></div>
+        <div style="margin-top: 20px; text-align: center;">Уже есть аккаунт? <button id="go-to-login" style="background: none; border: none; color: var(--brown-caramel); cursor: pointer; text-decoration: underline; padding: 0;">Войти</button></div>
     `;
 
     const form = document.getElementById('register-form') as HTMLFormElement;
@@ -287,12 +291,15 @@ const renderLogin = async (): Promise<void> => {
             </div>
             <div style="margin-bottom: 10px;">
                 <label for="login-password">Пароль:</label><br>
-                <input type="password" id="login-password" name="password" required>
+                <div style="position: relative;">
+                    <input type="password" id="login-password" name="password" required style="width: 100%; padding-right: 40px; box-sizing: border-box;">
+                    <button type="button" class="password-toggle" onclick="togglePasswordVisibility('login-password', this)" style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; cursor: pointer; color: var(--text-muted); padding: 5px;"><i class="fas fa-eye"></i></button>
+                </div>
             </div>
             <button type="submit">Войти</button>
         </form>
         <div id="login-message" style="margin-top: 15px; font-weight: bold;"></div>
-        <div style="margin-top: 20px; text-align: center;">Нет аккаунта? <button id="go-to-register" style="background: none; border: none; color: blue; cursor: pointer; text-decoration: underline; padding: 0;">Зарегистрироваться</button></div>
+        <div style="margin-top: 20px; text-align: center;">Нет аккаунта? <button id="go-to-register" style="background: none; border: none; color: var(--brown-caramel); cursor: pointer; text-decoration: underline; padding: 0;">Зарегистрироваться</button></div>
     `;
     
     const form = document.getElementById('login-form') as HTMLFormElement;
@@ -388,7 +395,7 @@ const renderOrders = async (): Promise<void> => {
                         </div>
                         <div class="order-detail">
                             <span class="order-detail-label">Сумма заказа</span>
-                            <span class="order-detail-value">${order.totalPrice} ₽</span>
+                            <span class="order-detail-value">${order.totalPrice} Br</span>
                         </div>
                     </div>
                     <div class="order-items">
@@ -535,7 +542,7 @@ const renderCart = async (): Promise<void> => {
             cartHtml += `
                 <tr id="cart-item-${item.productId}">
                     <td class="cart-item-title">${title}</td>
-                    <td class="cart-item-price">${price} ₽</td>
+                    <td class="cart-item-price">${price} Br</td>
                     <td>
                         <div class="cart-quantity">
                             <button class="cart-quantity-btn" onclick="handleQuantityChange('${item.productId}', 'decrease')">−</button>
@@ -543,7 +550,7 @@ const renderCart = async (): Promise<void> => {
                             <button class="cart-quantity-btn" onclick="handleQuantityChange('${item.productId}', 'increase')">+</button>
                         </div>
                     </td>
-                    <td class="cart-item-price" id="sum-${item.productId}">${itemSum} ₽</td>
+                    <td class="cart-item-price" id="sum-${item.productId}">${itemSum} Br</td>
                     <td>
                         <button class="cart-remove-btn" onclick="handleRemoveItem('${item.productId}')">Удалить</button>
                     </td>
@@ -552,7 +559,7 @@ const renderCart = async (): Promise<void> => {
         });
         
         cartHtml += '</tbody></table>';
-        cartHtml += '<div class="cart-total"><div class="cart-total-label">Итого к оплате</div><div class="cart-total-amount" id="cart-total">' + totalPrice + ' ₽</div></div>';
+        cartHtml += '<div class="cart-total"><div class="cart-total-label">Итого к оплате</div><div class="cart-total-amount" id="cart-total">' + totalPrice + ' Br</div></div>';
         cartHtml += '<button id="checkout-btn" class="checkout-btn">Оформить доставку</button></div>';
         
         cartContent.innerHTML = cartHtml;
@@ -901,6 +908,20 @@ const hideUserInfo = (): void => {
     
     if (navProfile) navProfile.style.display = 'none';
     if (navAuth) navAuth.style.display = 'inline-block';
+};
+
+// Функция переключения видимости пароля
+(window as any).togglePasswordVisibility = (inputId: string, button: HTMLButtonElement): void => {
+    const input = document.getElementById(inputId) as HTMLInputElement;
+    if (input) {
+        if (input.type === 'password') {
+            input.type = 'text';
+            button.innerHTML = '<i class="fas fa-eye-slash"></i>';
+        } else {
+            input.type = 'password';
+            button.innerHTML = '<i class="fas fa-eye"></i>';
+        }
+    }
 };
 
 window.addEventListener('DOMContentLoaded', () => {
